@@ -17,6 +17,10 @@ export const UNITS = {
   venin:      { name: 'Venin',      icon: '☠️', color: '#b06cff', rarity: 'rare',       dmg: 7,  rate: 1.1, type: 'poison', desc: 'Poison qui ronge les ennemis' },
   alchimiste: { name: 'Alchimiste', icon: '💰', color: '#f0b429', rarity: 'rare',       dmg: 6,  rate: 0.8, type: 'mana',   desc: 'Rapporte de la mana à chaque vague' },
   sentinelle: { name: 'Sentinelle', icon: '🌙', color: '#c9d3ff', rarity: 'epique',     dmg: 80, rate: 0.4, type: 'strong', desc: 'Vise toujours l\'ennemi le plus résistant' },
+  roc:        { name: 'Rocher',     icon: '🪨', color: '#c49a6c', rarity: 'commun',     dmg: 46, rate: 0.5, type: 'heavy',  desc: 'Gros coups, dégâts doublés contre Golems et boss' },
+  maree:      { name: 'Marée',      icon: '🌊', color: '#3fa7ff', rarity: 'rare',       dmg: 6,  rate: 0.6, type: 'all',    desc: 'Vague qui frappe tous les ennemis à la fois' },
+  chrono:     { name: 'Chronomage', icon: '⏳', color: '#8ee6c4', rarity: 'epique',     dmg: 16, rate: 0.7, type: 'stun',   desc: 'Fige sa cible un court instant' },
+  dragon:     { name: 'Dragon',     icon: '🐉', color: '#ff8a3d', rarity: 'legendaire', dmg: 32, rate: 0.9, type: 'dragon', desc: 'Souffle de feu : zone et brûlure' },
   faucheur:   { name: 'Faucheur',   icon: '💀', color: '#ff4d8d', rarity: 'legendaire', dmg: 28, rate: 0.8, type: 'reap',   desc: 'Peut éliminer un ennemi d\'un seul coup' },
 };
 export const UNIT_KEYS = Object.keys(UNITS);
@@ -32,13 +36,43 @@ export const ENEMIES = {
   rapide: { name: 'Furet',    hp: 0.55, spd: 74, r: 8,  color: '#ffa94d', mana: 6 },
   tank:   { name: 'Golem',    hp: 3.2,  spd: 27, r: 13, color: '#8a7f9e', mana: 15 },
   sbire:  { name: 'Sbire',    hp: 0.35, spd: 55, r: 7,  color: '#d58ae0', mana: 3 },
+  tete:   { name: 'Tête d\'hydre', hp: 3, spd: 34, r: 11, color: '#4fbf7a', mana: 20 },
 };
 // Un boss toutes les 5 vagues, à tour de rôle.
 export const BOSSES = [
   { id: 'colosse',     name: 'Colosse',     icon: '🗿', hp: 24, spd: 19, r: 20, color: '#c0563f', mana: 120, power: 'Très résistant' },
   { id: 'invocateur',  name: 'Invocateur',  icon: '🧙', hp: 16, spd: 21, r: 18, color: '#9b4dd8', mana: 120, power: 'Invoque des sbires', every: 5 },
+  { id: 'hydre',       name: 'Hydre',       icon: '🐲', hp: 18, spd: 20, r: 19, color: '#2f9e5f', mana: 100, power: 'Se divise en 3 têtes' },
   { id: 'briseur',     name: 'Briseur',     icon: '👹', hp: 20, spd: 20, r: 19, color: '#d23c6e', mana: 120, power: 'Gèle une de tes runes', every: 6 },
 ];
+
+// Défi de la semaine : même deck, même règle et même tirage pour tout le monde.
+export const CHALLENGE_RULES = [
+  { id: 'classique', icon: '⚔️', name: 'Classique',       desc: 'Aucune règle spéciale', mods: {} },
+  { id: 'ruee',      icon: '💨', name: 'Ruée',            desc: 'Ennemis 25 % plus rapides', mods: { speedMult: 1.25 } },
+  { id: 'tresor',    icon: '💰', name: 'Trésor maudit',   desc: 'Mana de départ ×3, ennemis 25 % plus résistants', mods: { startMana: 300, hpMult: 1.25 } },
+  { id: 'chasse',    icon: '👹', name: 'Chasse aux boss', desc: 'Un boss toutes les 3 vagues', mods: { bossEvery: 3 } },
+  { id: 'peau',      icon: '🛡️', name: 'Peau dure',       desc: 'Ennemis 40 % plus résistants, +50 % de mana par élimination', mods: { hpMult: 1.4, manaMult: 1.5 } },
+];
+export const CHALLENGE_CARD_LVL = 6;   // tout le monde à égalité, quelle que soit sa collection
+export const CHALLENGE_MILESTONES = [
+  { wave: 8, gems: 15 }, { wave: 14, gems: 30 }, { wave: 20, gems: 60 },
+];
+
+// Missions du jour : 3 tirées au hasard chaque jour.
+// stat : compteur suivi ; max : on garde le meilleur résultat d'une partie au lieu d'additionner.
+export const QUESTS = [
+  { id: 'parties',  stat: 'games',     goals: [2, 3],     text: 'Joue {n} parties' },
+  { id: 'fusions',  stat: 'merges',    goals: [15, 30],   text: 'Fusionne {n} fois' },
+  { id: 'kills',    stat: 'kills',     goals: [150, 300], text: 'Élimine {n} ennemis' },
+  { id: 'boss',     stat: 'bosses',    goals: [1, 2],     text: 'Vaincs {n} boss' },
+  { id: 'vague',    stat: 'wave',      goals: [8, 12],    text: 'Atteins la vague {n}', max: true },
+  { id: 'renfort',  stat: 'powerups',  goals: [4, 8],     text: 'Renforce tes runes {n} fois' },
+  { id: 'coffre',   stat: 'chests',    goals: [1, 2],     text: 'Ouvre {n} coffre(s)' },
+  { id: 'defi',     stat: 'challenge', goals: [1, 1],     text: 'Joue le défi de la semaine' },
+];
+export const QUEST_REWARDS = [{ coins: 200 }, { coins: 300 }, { gems: 10 }];
+export const QUEST_BONUS_CHEST = 'bois';
 
 export const BALANCE = {
   lives: 3,
@@ -82,6 +116,8 @@ export const ARENAS = [
   { min: 1000, name: 'Citadelle Ardente',  icon: '🌋' },
   { min: 1600, name: 'Trône des Runes',    icon: '👑' },
 ];
+// Récompense unique en atteignant une nouvelle arène
+export const ARENA_REWARD = { chest: 'royal', gems: 20 };
 
 // Achats intégrés. Les "id" doivent être créés à l'identique dans
 // Google Play Console et App Store Connect (voir PUBLIER.md).

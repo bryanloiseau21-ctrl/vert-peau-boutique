@@ -1,8 +1,8 @@
 // Service worker : le jeu fonctionne hors connexion après la première ouverture.
-const CACHE = 'rempart-des-runes-v1';
+const CACHE = 'rempart-des-runes-v2';
 const FILES = ['./', 'index.html', 'style.css', 'manifest.webmanifest', 'confidentialite.html',
   'js/main.js', 'js/data.js', 'js/engine.js', 'js/meta.js', 'js/render.js', 'js/battle.js',
-  'js/audio.js', 'js/save.js', 'js/payments.js', 'js/config.js',
+  'js/audio.js', 'js/save.js', 'js/payments.js', 'js/config.js', 'js/leaderboard.js', 'js/notifs.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

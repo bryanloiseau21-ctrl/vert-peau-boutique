@@ -28,6 +28,9 @@
       <div class="arena" id="hArena"></div>
       <button class="btn big play" data-action="play">⚔️ JOUER</button>
       <button class="daily" id="hDaily" data-action="daily" hidden></button>
+      <button class="defibtn" id="hDefi" data-action="tab" data-tab="defi"></button>
+      <h3>Missions du jour</h3>
+      <div id="hQuests"></div>
       <div class="stats">
         <div class="stat"><b id="hBest">0</b><span>Meilleure vague</span></div>
         <div class="stat"><b id="hGames">0</b><span>Parties</span></div>
@@ -42,6 +45,20 @@
         <li><b>Renforce</b> un type de rune avec les boutons du bas.</li>
         <li>Un <b>boss</b> arrive toutes les 5 vagues. Tu as 3 vies.</li>
       </ul>
+    </section>
+
+    <section class="screen" id="s-defi">
+      <h2>Défi de la semaine</h2>
+      <p class="muted small">Même deck, même règle et mêmes vagues pour tous les joueurs. Fais mieux que les autres !</p>
+      <div class="defihead" id="fHead"></div>
+      <div class="deckrow" id="fDeck"></div>
+      <p class="best" id="fBest"></p>
+      <button class="btn big" data-action="defi">🏆 JOUER LE DÉFI</button>
+      <h3>Paliers de la semaine</h3>
+      <div class="miles" id="fMiles"></div>
+      <h3>Classement</h3>
+      <div id="fBoard"></div>
+      <button class="btn ghost wide" data-action="pseudo" id="fPseudo">Choisir mon pseudo</button>
     </section>
 
     <section class="screen" id="s-deck">
@@ -75,7 +92,8 @@
   </main>
 
   <nav class="nav">
-    <button data-action="tab" data-tab="home" class="on"><b>🏰</b>Accueil</button>
+    <button data-action="tab" data-tab="home" class="on"><b>🏰</b>Accueil<i class="dot" id="nHome" hidden></i></button>
+    <button data-action="tab" data-tab="defi"><b>🏆</b>Défi<i class="dot" id="nDefi" hidden></i></button>
     <button data-action="tab" data-tab="deck"><b>🃏</b>Deck<i class="dot" id="nDeck" hidden></i></button>
     <button data-action="tab" data-tab="chest"><b>🎁</b>Coffres<i class="dot" id="nChest" hidden></i></button>
     <button data-action="tab" data-tab="shop"><b>💎</b>Boutique</button>

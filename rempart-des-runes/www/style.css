@@ -129,3 +129,40 @@ h3 { margin: 20px 0 8px; font-size: 13px; color: var(--mut); text-transform: upp
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Défi de la semaine, missions, classement ---------- */
+.small0 { font-size: 13px; }
+.defibtn { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid #ffc94d55;
+  background: linear-gradient(120deg, #4a2d7a, #2e2258); color: var(--txt); text-align: left; cursor: pointer; }
+.defibtn > span { font-size: 28px; }
+.defibtn > div { flex: 1; }
+.defibtn .go { font-size: 26px; color: var(--acc); }
+.quest { display: flex; align-items: center; gap: 10px; background: var(--panel); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
+.quest .qt { flex: 1; min-width: 0; }
+.quest .qt b { font-size: 14px; display: block; }
+.quest .bar { margin: 6px 0 2px; }
+.quest.claimed { opacity: .55; }
+.quest.bonus { border: 1px dashed var(--line); }
+.quest .qbtn { padding: 8px 10px; font-size: 13px; min-width: 76px; }
+.quest .qr { font-size: 22px; }
+.defihead { display: flex; gap: 12px; align-items: center; background: var(--panel); border-radius: 16px; padding: 12px; margin-bottom: 10px; }
+.defihead .rule { font-size: 40px; }
+.best { text-align: center; color: var(--mut); font-size: 13px; margin: 12px 0; }
+.best b { color: var(--txt); }
+.miles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mile { background: var(--panel); border-radius: 14px; padding: 10px 6px; text-align: center; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.mile span { font-weight: 800; }
+.mile.ready { border: 2px solid var(--ok); }
+.mile.claimed { opacity: .5; }
+.lhead { color: var(--mut); font-size: 12px; margin-bottom: 6px; }
+.lrow { display: flex; align-items: center; gap: 10px; background: var(--panel); border-radius: 12px; padding: 9px 12px; margin-bottom: 5px; }
+.lrow.me { background: #ffc94d22; border: 1px solid #ffc94d77; }
+.lr { width: 28px; text-align: center; font-weight: 900; }
+.ln { flex: 1; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lw { color: var(--mut); font-size: 13px; }
+.lsep { text-align: center; color: var(--mut); }
+.linkbtn { background: none; border: 0; color: var(--gem); text-decoration: underline; cursor: pointer; padding: 0; }
+.input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--line); background: #0005; color: var(--txt); font-size: 17px;
+  margin-top: 10px; user-select: text; -webkit-user-select: text; outline: none; }
+.input:focus { border-color: var(--acc); }
+.done { background: #5fd38a1f; color: var(--ok); border-radius: 10px; padding: 7px 10px; font-weight: 700; font-size: 13px; margin-top: 8px; }

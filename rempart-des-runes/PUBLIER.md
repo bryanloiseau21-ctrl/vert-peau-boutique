@@ -74,7 +74,8 @@ GitHub → **Settings** → **Secrets and variables** → **Actions** → **New 
 
 - **Contenu de l'appli** : politique de confidentialité → URL de `confidentialite.html`
   (ex. `https://bryanloiseau21-ctrl.github.io/vert-peau-boutique/rempart/confidentialite.html`),
-  sécurité des données : **aucune donnée collectée**, publicités : **non**, questionnaire de classification :
+  sécurité des données : **aucune donnée collectée** (ou, si le classement est activé : identifiant anonyme + pseudo,
+  voir plus bas), publicités : **non**, notifications : rappels locaux, questionnaire de classification :
   coche « achats intégrés » et « éléments aléatoires payants (coffres) » — les probabilités sont affichées dans le jeu.
 - Public cible : 13 ans et plus recommandé (les jeux avec coffres payants destinés aux enfants ont des règles plus strictes).
 - Captures : lance `CAPTURES=./captures node tests/ui.test.js` pour obtenir des captures d'écran du jeu.
@@ -98,7 +99,27 @@ ils servent aussi pour ce jeu. Sinon, suis l'étape App Store de [`aides-etudian
 5. GitHub → **Actions** → **Rempart des Runes – App Store** → **Run workflow** → le build arrive dans **TestFlight**.
 6. Teste les achats avec un compte **Sandbox** (App Store Connect → Utilisateurs → Sandbox) : aucun débit réel.
 7. Joins les achats intégrés à ta première version, puis **Soumettre pour vérification**.
-   Confidentialité : **aucune donnée collectée**. Âge : indique les achats intégrés et les « coffres » (loot boxes) — probabilités affichées.
+   Confidentialité : **aucune donnée collectée** (ou, avec le classement : identifiant + pseudo, non liés à l'identité, sans suivi). Âge : indique les achats intégrés et les « coffres » (loot boxes) — probabilités affichées.
+
+---
+
+## Classement en ligne (Firebase)
+
+Gratuit (offre Spark largement suffisante). Compte 15 minutes. Utilise un **projet Firebase séparé** de Boost Étudiant :
+les règles de sécurité s'appliquent à tout un projet.
+
+1. <https://console.firebase.google.com> → **Ajouter un projet** → `rempart-des-runes` (Google Analytics : inutile).
+2. **Authentication** → **Commencer** → **Sign-in method** → active **Anonyme**.
+   Onglet **Settings** → **Domaines autorisés** → ajoute `bryanloiseau21-ctrl.github.io`.
+3. **Firestore Database** → **Créer une base de données** → emplacement **europe-west** → mode **production**.
+   Onglet **Règles** → remplace tout par le contenu de [`firestore.rules`](firestore.rules) → **Publier**.
+4. ⚙️ **Paramètres du projet** → **Vos applications** → **Web** `</>` → surnom `Rempart` →
+   copie `apiKey`, `authDomain`, `projectId`, `appId` dans `www/js/config.js` (bloc `FIREBASE`) et pousse.
+   Ces valeurs sont publiques (ce ne sont pas des mots de passe) : la sécurité vient des règles.
+5. C'est tout : pas besoin de fichiers `google-services.json` / `GoogleService-Info.plist`, le classement passe par le SDK web.
+
+Avec le classement actif, les fiches store doivent déclarer : **identifiant (anonyme)** et **contenu généré par
+l'utilisateur (pseudo)**, utilisés pour une fonctionnalité de l'appli, non partagés, non liés à l'identité.
 
 ---
 

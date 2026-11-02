@@ -21,9 +21,12 @@ export function createBattleController({ canvas, container, onEnd, onPauseReques
   const resize = () => { if (b) R.resize(container.getBoundingClientRect()); };
   window.addEventListener('resize', resize);
 
-  function start({ deck, levels, tutorial: tuto }) {
-    b = createBattle({ deck, levels });
-    view = { drag: null, fx: [], banner: { s: 'Prépare-toi !', life: 1.6, max: 1.6 }, shake: 0, speed: 1, hint: null };
+  let mode = 'normal';
+  /** mode : 'normal' | 'defi'. Pour le défi : rng (graine commune), mods (règle) et label. */
+  function start({ deck, levels, tutorial: tuto, rng, mods, mode: md = 'normal', label = '' }) {
+    mode = md;
+    b = createBattle({ deck, levels, rng, mods });
+    view = { drag: null, fx: [], banner: { s: label || 'Prépare-toi !', life: 2, max: 2 }, shake: 0, speed: 1, hint: null, label };
     tutorial = tuto ? { step: 0, t: 0 } : null;
     paused = false; ending = false; acc = 0;
     container.classList.add('on');
@@ -73,6 +76,7 @@ export function createBattleController({ canvas, container, onEnd, onPauseReques
           break;
         case 'splash': fx({ t: 'ring', x: e.x, y: e.y, life: 0.3, c: e.color, r: e.r }); sfx('splash'); break;
         case 'zap': fx({ t: 'line', x: e.x, y: e.y, x2: e.x2, y2: e.y2, life: 0.15, c: e.color }); sfx('zap'); break;
+        case 'tide': fx({ t: 'flash', life: 0.25, c: '#3fa7ff33' }); sfx('splash'); break;
         case 'reap': fx({ t: 'txt', x: e.x, y: e.y - 14, s: '💀', c: '#fff', life: 0.8, size: 22 }); sfx('reap'); break;
         case 'leak': fx({ t: 'flash', life: 0.35 }); view.shake = e.boss ? 0.8 : 0.4; sfx('leak'); haptic('heavy'); break;
         case 'wave':
@@ -90,7 +94,7 @@ export function createBattleController({ canvas, container, onEnd, onPauseReques
           if (!ending) {
             ending = true;
             if (!e.forfeit) { sfx('defeat'); haptic('error'); banner('Le rempart est tombé…', '#ff6b8f', 3); }
-            const result = { wave: e.wave, kills: e.kills, forfeit: !!e.forfeit };
+            const result = { wave: e.wave, kills: e.kills, forfeit: !!e.forfeit, mode, stats: { ...b.stats } };
             setTimeout(() => { stopMusic(); onEnd(result); }, e.forfeit ? 0 : 1300);
           }
           break;

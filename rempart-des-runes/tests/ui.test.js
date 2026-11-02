@@ -127,6 +127,42 @@ try {
   await page.click('[data-m="home"]');
   ok(await page.locator('#battle').isHidden(), "retour à l'accueil après la partie");
 
+  // Missions du jour
+  ok(await page.locator('#hQuests .quest').count() === 4, 'les 3 missions du jour + le bonus sont affichés');
+  ok(await page.evaluate(() => __jeu.S.quests.list.find((q) => q.id === 'parties')?.progress ?? 1) >= 1, 'la partie jouée compte pour les missions');
+  await snap(page, 'missions');
+  // Mission terminée → récompense
+  await page.evaluate(() => { __jeu.S.quests.list[0].progress = __jeu.S.quests.list[0].goal; });
+  await page.click('.nav [data-tab="deck"]'); await page.click('.nav [data-tab="home"]');
+  const before = await page.evaluate(() => __jeu.S.coins + __jeu.S.gems);
+  await page.click('[data-action="quest"][data-i="0"]');
+  ok(await page.evaluate(() => __jeu.S.coins + __jeu.S.gems) > before && await page.evaluate(() => __jeu.S.quests.list[0].claimed), 'une mission terminée donne sa récompense');
+
+  // Défi de la semaine
+  await page.click('#hDefi');
+  ok(await page.locator('#s-defi').isVisible(), "le bouton Défi de l'accueil ouvre l'onglet Défi");
+  ok(await page.locator('#fDeck .card').count() === 5, 'le deck imposé du défi est affiché');
+  ok((await page.locator('#fBoard').innerText()).includes('pas encore activé'), 'sans Firebase, le classement indique clairement qu\'il est local');
+  await snap(page, 'defi');
+  await page.click('[data-action="defi"]');
+  const deckDefi = await page.evaluate(() => __jeu.battle.state.deck.join());
+  const attendu = await page.evaluate(async () => { const M = await import('./js/meta.js'); return M.challengeOf(M.weekKey()).deck.join(); });
+  ok(deckDefi === attendu, 'la partie du défi utilise le deck de la semaine');
+  for (let i = 0; i < 4; i++) await tap(180, 544);
+  await page.waitForTimeout(4000);
+  await tap(36, 30); await page.click('[data-m="quit"]');
+  await page.waitForSelector('[data-m="again"]');
+  ok(await page.evaluate(() => __jeu.S.challenge.plays === 1), "l'essai du défi est enregistré");
+  ok(await page.evaluate(() => __jeu.S.games === 2 && __jeu.S.trophies === 0), 'le défi ne fait pas perdre de trophées');
+  await page.click('[data-m="home"]');
+  ok(await page.locator('#s-defi').isVisible(), 'après le défi, retour sur le classement');
+  // Pseudo
+  await page.click('#fPseudo');
+  await page.fill('#pseudoIn', 'ab'); await page.click('[data-m="yes"]');
+  ok(await page.locator('#pseudoErr').innerText().then((t) => t.length > 0), 'un pseudo trop court est refusé');
+  await page.fill('#pseudoIn', 'Testeur_21'); await page.click('[data-m="yes"]');
+  ok(await page.evaluate(() => __jeu.S.pseudo) === 'Testeur_21', 'le pseudo est enregistré');
+
   // Réglages
   await page.click('[data-action="settings"]');
   await page.click('[data-s="music"]');

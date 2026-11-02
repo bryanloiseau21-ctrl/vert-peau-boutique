@@ -107,6 +107,7 @@ export function createRenderer(canvas) {
     g.addColorStop(0, e.hit > 0 ? '#ffffff' : lighten(e.color)); g.addColorStop(1, e.color);
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
     if (e.slowT > 0) { ctx.strokeStyle = '#7fd8ff'; ctx.lineWidth = 2.5; ctx.stroke(); }
+    if (e.stunT > 0) { ctx.strokeStyle = '#8ee6c4'; ctx.lineWidth = 3; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.arc(x, y, r + 3, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
     if (e.poisonT > 0) { ctx.fillStyle = '#b06cff66'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
     if (e.boss) {
       ctx.font = `${r * 1.25}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -197,6 +198,7 @@ export function createRenderer(canvas) {
     ctx.font = '19px serif'; ctx.fillText('❤️'.repeat(b.lives) + '🖤'.repeat(Math.max(0, 3 - b.lives)), W / 2, 62);
     ctx.font = '13px system-ui, sans-serif'; ctx.fillStyle = '#a99cd0';
     ctx.fillText(`Ennemis restants : ${remainingEnemies(b)}`, W / 2, 88);
+    if (v.label && !b.enemies.some((e) => e.boss)) { ctx.fillStyle = '#ffc94d'; ctx.font = 'bold 12px system-ui, sans-serif'; ctx.fillText(v.label, W / 2, 112); }
 
     const boss = b.enemies.find((e) => e.boss);
     if (boss) {

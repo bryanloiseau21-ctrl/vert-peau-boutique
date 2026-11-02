@@ -5,7 +5,10 @@ import { loadState, saveState, resetState } from './save.js';
 import { createPayments } from './payments.js';
 import { createBattleController } from './battle.js';
 import { sfx, haptic, unlockAudio, applySettings, suspendAudio } from './audio.js';
-import { CONFIG } from './config.js';
+import { CONFIG, APP_VERSION } from './config.js';
+import { seededRng } from './engine.js';
+import { leaderboardEnabled, submitScore, fetchLeaderboard } from './leaderboard.js';
+import { notifsAvailable, askPermission, scheduleReminders } from './notifs.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => Math.floor(n).toLocaleString('fr-FR');
@@ -49,11 +52,17 @@ function toast(msg, kind = 'success') {
 }
 
 /* =============== Rendu des écrans =============== */
-function cardHTML(k, extra = '') {
-  const u = UNITS[k], c = S.cards[k], rar = RARITIES[u.rarity];
+function cardHTML(k, extra = '', lvl = S.cards[k].lvl) {
+  const u = UNITS[k], rar = RARITIES[u.rarity];
   return `<div class="ic" style="background:${u.color}2e;border-color:${rar.color}88">${u.icon}</div>
-    <div class="nm" style="color:${rar.color}">${u.name}</div><div class="lv">Niv. ${c.lvl}</div>${extra}`;
+    <div class="nm" style="color:${rar.color}">${u.name}</div><div class="lv">Niv. ${lvl}</div>${extra}`;
 }
+const timeLeft = (ms) => {
+  const m = Math.max(1, Math.ceil(ms / 60000));
+  if (m >= 1440) return `${Math.floor(m / 1440)} j ${Math.floor((m % 1440) / 60)} h`;
+  return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}` : `${m} min`;
+};
+const rewardText = (r) => [r.gems && `💎 ${fmt(r.gems)}`, r.coins && `🪙 ${fmt(r.coins)}`].filter(Boolean).join(' ');
 
 function renderTop() {
   $('tTro').textContent = fmt(S.trophies);
@@ -61,6 +70,27 @@ function renderTop() {
   $('tGem').textContent = fmt(S.gems);
   $('nDeck').hidden = !UNIT_KEYS.some((k) => M.canUpgrade(S, k));
   $('nChest').hidden = M.freeChestLeft(S, Date.now()) > 0;
+  M.ensureQuests(S);
+  $('nHome').hidden = !(M.questsToClaim(S) || M.dailyReady(S));
+  const week = M.weekKey();
+  $('nDefi').hidden = !(M.challengeMilestones(S, week).some((m) => m.reached && !m.claimed) || S.challenge.plays === 0);
+}
+
+function renderQuests() {
+  const box = $('hQuests');
+  const list = S.quests.list;
+  const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
+  box.innerHTML = list.map((q, i) => {
+    const pct = Math.min(100, (q.progress / q.goal) * 100), done = q.progress >= q.goal;
+    return `<div class="quest ${q.claimed ? 'claimed' : ''}">
+      <div class="qt"><b>${M.questText(q)}</b><div class="bar"><i style="width:${pct}%"></i></div>
+        <span class="muted tiny">${q.claimed ? 'Récompense prise ✓' : `${fmt(q.progress)} / ${fmt(q.goal)}`}</span></div>
+      ${q.claimed ? '<span class="qr">✅</span>' : `<button class="btn ${done ? 'ok' : 'ghost'} qbtn" data-action="quest" data-i="${i}" ${done ? '' : 'disabled'}>${rewardText(M.questReward(i))}</button>`}
+    </div>`;
+  }).join('') + `<div class="quest bonus ${S.quests.bonus ? 'claimed' : ''}">
+      <div class="qt"><b>📦 Bonus : termine les 3 missions</b><span class="muted tiny">Nouvelles missions dans ${timeLeft(midnight - Date.now())}</span></div>
+      ${S.quests.bonus ? '<span class="qr">✅</span>' : `<button class="btn ${M.questBonusReady(S) ? 'ok' : 'ghost'} qbtn" data-action="questbonus" ${M.questBonusReady(S) ? '' : 'disabled'}>Coffre</button>`}
+    </div>`;
 }
 
 function renderHome() {
@@ -79,6 +109,78 @@ function renderHome() {
     d.hidden = false;
     d.innerHTML = `<span>🎁</span><div>Cadeau du jour disponible !<div class="muted tiny">Reviens chaque jour : jusqu'à 50 💎 le 7e jour</div></div>`;
   } else d.hidden = true;
+  const c = M.challengeOf(M.weekKey());
+  $('hDefi').innerHTML = `<span>🏆</span><div><b>Défi de la semaine</b> · ${c.rule.icon} ${c.rule.name}
+    <div class="muted tiny">${S.challenge.week === c.week && S.challenge.best ? `Ton record : vague ${S.challenge.best}` : 'Même deck pour tout le monde, gemmes à gagner'} · fin dans ${timeLeft(M.weekEnd() - Date.now())}</div></div><b class="go">›</b>`;
+  renderQuests();
+}
+
+/* ---------- Défi de la semaine ---------- */
+let board = { week: '', data: null, error: '', loading: false };
+function renderDefi() {
+  const week = M.weekKey(), c = M.challengeOf(week);
+  const mine = S.challenge.week === week ? S.challenge : { best: 0, kills: 0, plays: 0 };
+  $('fHead').innerHTML = `<div class="rule">${c.rule.icon}</div><div><b>${c.rule.name}</b><div class="muted small0">${c.rule.desc}</div>
+    <div class="muted tiny">Se termine dans ${timeLeft(M.weekEnd() - Date.now())} · runes niveau ${c.levels[c.deck[0]]} pour tous</div></div>`;
+  $('fDeck').innerHTML = c.deck.map((k) => `<div class="card" data-action="card" data-k="${k}">${cardHTML(k, '', c.levels[k])}</div>`).join('');
+  $('fBest').innerHTML = mine.best ? `Ton record : <b>vague ${mine.best}</b> · ${fmt(mine.kills)} ennemis · ${mine.plays} essai(s)` : 'Pas encore tenté cette semaine. Essais illimités, seul ton meilleur score compte.';
+  $('fMiles').innerHTML = M.challengeMilestones(S, week).map((m) => `<div class="mile ${m.claimed ? 'claimed' : m.reached ? 'ready' : ''}">
+      <b>Vague ${m.wave}</b><span>💎 ${m.gems}</span>
+      ${m.claimed ? '<small>✓</small>' : m.reached ? `<button class="btn ok small" data-action="mile" data-i="${m.i}">Prendre</button>` : '<small>🔒</small>'}</div>`).join('');
+  renderBoard(week);
+}
+function renderBoard(week) {
+  const el = $('fBoard');
+  $('fPseudo').textContent = S.pseudo ? `Pseudo : ${S.pseudo} ✏️` : 'Choisir mon pseudo';
+  if (!leaderboardEnabled()) {
+    el.innerHTML = `<p class="muted small0">Le classement en ligne n'est pas encore activé sur cette version. Ton meilleur score est enregistré sur ton appareil.</p>`;
+    return;
+  }
+  if (board.week !== week || (!board.data && !board.loading && !board.error)) loadBoard(week);
+  if (board.loading && !board.data) { el.innerHTML = '<p class="muted small0">Chargement du classement…</p>'; return; }
+  if (board.error) { el.innerHTML = `<p class="muted small0">${board.error} <button class="linkbtn" data-action="reloadboard">Réessayer</button></p>`; return; }
+  if (!board.data) return;
+  const { top, me, total } = board.data;
+  if (!top.length) { el.innerHTML = '<p class="muted small0">Personne n\'a encore joué cette semaine : sois le premier !</p>'; return; }
+  const row = (r) => `<div class="lrow ${r.me ? 'me' : ''}"><span class="lr">${r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : r.rank}</span><span class="ln">${esc(r.pseudo)}</span><span class="lw">Vague ${r.wave}</span></div>`;
+  el.innerHTML = `<div class="lhead">${fmt(total)} joueur(s) cette semaine</div>${top.slice(0, 20).map(row).join('')}
+    ${me && me.rank > 20 ? `<div class="lsep">⋯</div>${row(me)}` : ''}`;
+}
+async function loadBoard(week) {
+  board = { week, data: board.week === week ? board.data : null, error: '', loading: true };
+  try { board.data = await fetchLeaderboard(week); }
+  catch (e) { console.warn(e); board.error = 'Classement indisponible (connexion ?).'; }
+  board.loading = false;
+  if (currentTab === 'defi') renderBoard(week);
+}
+async function askPseudo() {
+  return new Promise((resolve) => {
+    openModal(`<div class="bigic">✍️</div><h2>Ton pseudo</h2><p>Il s'affichera dans le classement. Pas ton vrai nom !</p>
+      <input id="pseudoIn" class="input" maxlength="16" autocomplete="off" value="${esc(S.pseudo)}" placeholder="3 à 16 caractères">
+      <p class="tiny" id="pseudoErr"></p>
+      <div class="row"><button class="btn ghost" data-m="no">Plus tard</button><button class="btn" data-m="yes">Valider</button></div>`,
+    { onBack: () => { closeModal(); resolve(false); } });
+    const inp = $('pseudoIn');
+    setTimeout(() => inp.focus(), 50);
+    $('mbox').querySelector('[data-m="no"]').onclick = () => { closeModal(); resolve(false); };
+    const ok = () => {
+      const v = inp.value.trim();
+      if (!M.validPseudo(v)) { $('pseudoErr').textContent = '3 à 16 lettres, chiffres, espaces, . _ ou -'; sfx('error'); return; }
+      S.pseudo = v; persist(true); closeModal(); resolve(true);
+    };
+    $('mbox').querySelector('[data-m="yes"]').onclick = ok;
+    inp.onkeydown = (e) => { if (e.key === 'Enter') ok(); };
+  });
+}
+async function sendChallengeScore() {
+  if (!leaderboardEnabled() || !S.pseudo || S.challenge.week !== M.weekKey() || !S.challenge.best) return;
+  try { await submitScore(S.challenge.week, S.pseudo, S.challenge.best, S.challenge.kills); board.data = null; }
+  catch (e) { console.warn('Score non envoyé', e); }
+}
+function playChallenge() {
+  unlockAudio(); sfx('click');
+  const c = M.challengeOf(M.weekKey());
+  battle.start({ deck: c.deck, levels: c.levels, rng: seededRng(c.seed), mods: c.rule.mods, mode: 'defi', label: `🏆 Défi : ${c.rule.icon} ${c.rule.name}` });
 }
 
 function renderDeck() {
@@ -137,6 +239,7 @@ function render() {
   if (currentTab === 'deck') renderDeck();
   if (currentTab === 'chest') renderChests();
   if (currentTab === 'shop') renderShop();
+  if (currentTab === 'defi') renderDefi();
 }
 
 function tab(t) {
@@ -177,17 +280,18 @@ async function openChestAction(id, free) {
   }
   const res = M.openChest(S, id, { paid: free ? 'free' : 'gems' });
   if (!res) return;
+  M.progressQuests(S, { chests: 1 });
   persist(true);
   render();
   showChestResult(res);
 }
-function showChestResult(res, title) {
+function showChestResult(res, title, extra = '') {
   sfx('chest'); haptic('success');
   const items = Object.entries(res.cards).map(([k, n], i) => {
     const u = UNITS[k];
     return `<div style="color:${RARITIES[u.rarity].color};animation-delay:${0.1 + i * 0.08}s">${u.icon} ${u.name} ×${n}${res.fresh.includes(k) ? '<span class="tag">NOUVEAU</span>' : ''}</div>`;
   }).join('');
-  alertBox({ icon: res.chest.icon, title: title || res.chest.name, html: `<div class="reveal">${items}<div>🪙 +${fmt(res.coins)}</div></div>`, ok: 'Super !' });
+  return alertBox({ icon: res.chest.icon, title: title || res.chest.name, html: `${extra}<div class="reveal">${items}<div>🪙 +${fmt(res.coins)}</div></div>`, ok: 'Super !' });
 }
 
 async function noGems() {
@@ -230,19 +334,22 @@ async function claimDaily() {
 function settings() {
   const sw = (k, label) => `<div class="setting">${label}<button class="switch ${S.settings[k] ? 'on' : ''}" data-s="${k}" aria-label="${label}"></button></div>`;
   openModal(`<h2>Réglages</h2>
-    ${sw('sound', '🔊 Effets sonores')}${sw('music', '🎵 Musique')}${sw('haptics', '📳 Vibrations')}
+    ${sw('sound', '🔊 Effets sonores')}${sw('music', '🎵 Musique')}${sw('haptics', '📳 Vibrations')}${notifsAvailable() ? sw('notifs', '🔔 Rappels') : ''}
     <div class="col">
+      <button class="btn ghost" data-m="pseudo">✍️ ${S.pseudo ? `Pseudo : ${esc(S.pseudo)}` : 'Choisir mon pseudo'}</button>
       ${payments.mode !== 'off' ? '<button class="btn ghost" data-m="restore">Restaurer mes achats</button>' : ''}
       <a class="btn ghost" href="${CONFIG.PRIVACY_URL}" target="_blank" rel="noopener" style="text-decoration:none">Confidentialité</a>
       <button class="btn bad" data-m="reset">Effacer ma progression</button>
       <button class="btn" data-m="close">Fermer</button>
     </div>
-    <p class="tiny">Rempart des Runes · v${window.APP_VERSION || '1.0.0'}</p>`, { onBack: closeModal });
+    <p class="tiny">Rempart des Runes · v${APP_VERSION}</p>`, { onBack: closeModal });
   const box = $('mbox');
   box.querySelectorAll('[data-s]').forEach((b) => b.onclick = () => {
     const k = b.dataset.s; S.settings[k] = !S.settings[k];
     b.classList.toggle('on', S.settings[k]); applySettings(S.settings); persist(); sfx('click');
+    if (k === 'notifs' && S.settings.notifs) askPermission();
   });
+  box.querySelector('[data-m="pseudo"]').onclick = async () => { closeModal(); if (await askPseudo()) { toast('Pseudo enregistré'); sendChallengeScore(); } };
   box.querySelector('[data-m="close"]').onclick = closeModal;
   const r = box.querySelector('[data-m="restore"]'); if (r) r.onclick = () => payments.restore();
   box.querySelector('[data-m="reset"]').onclick = async () => {
@@ -282,24 +389,56 @@ function pauseMenu() {
 }
 
 function showResults(result) {
+  const defi = result.mode === 'defi';
+  const week = M.weekKey();
   const r = M.battleRewards(S, result.wave, { forfeit: result.forfeit });
+  if (defi) { r.trophies = 0; r.record = false; r.gems = 0; }   // le défi ne change ni trophées ni record normal
+  const firstGame = S.games === 0;
   M.applyRewards(S, r);
+  S.lastPlayed = Date.now();
+  const defiRecord = defi && M.recordChallenge(S, week, result.wave, result.kills);
+  const st = result.stats || {};
+  const doneQuests = M.progressQuests(S, { games: 1, merges: st.merges, kills: result.kills, bosses: st.bosses,
+    wave: result.wave, powerups: st.powerups, challenge: defi ? 1 : 0 });
+  const arenas = M.claimNewArenas(S);
   persist(true);
-  if (r.record && !result.forfeit) sfx('victory');
-  openModal(`<div class="bigic">${r.record ? '🏅' : result.forfeit ? '🏳️' : '🏰'}</div>
-    <h2>${r.record ? 'Nouveau record !' : result.forfeit ? 'Partie abandonnée' : 'Le rempart est tombé'}</h2>
-    <p>Vague atteinte : <b style="color:var(--txt)">${result.wave}</b> · ${result.kills} ennemis vaincus</p>
+  if ((r.record || defiRecord) && !result.forfeit) sfx('victory');
+  if (defiRecord) sendChallengeScore();
+
+  const title = defiRecord ? 'Record du défi !' : r.record ? 'Nouveau record !' : result.forfeit ? 'Partie abandonnée' : 'Le rempart est tombé';
+  const extras = [
+    ...doneQuests.map((q) => `<div class="done">✅ Mission terminée : ${M.questText(q)}</div>`),
+    defi && leaderboardEnabled() && !S.pseudo && S.challenge.best ? '<button class="btn ghost small" data-m="pseudo">✍️ Choisir un pseudo pour apparaître au classement</button>' : '',
+    defi && M.challengeMilestones(S, week).some((m) => m.reached && !m.claimed) ? '<div class="done">💎 Palier du défi atteint : récompense à prendre !</div>' : '',
+  ].join('');
+  openModal(`<div class="bigic">${defiRecord || r.record ? '🏅' : result.forfeit ? '🏳️' : defi ? '🏆' : '🏰'}</div>
+    <h2>${title}</h2>
+    <p>Vague atteinte : <b style="color:var(--txt)">${result.wave}</b> · ${result.kills} ennemis vaincus${defi ? `<br>Record du défi : vague ${S.challenge.best}` : ''}</p>
     <div class="rewards">
       <div>🪙 ${fmt(r.coins)}<small>${S.premium ? 'Pass ×2' : 'pièces'}</small></div>
       <div style="animation-delay:.1s">🏆 ${r.trophies >= 0 ? '+' : ''}${r.trophies}<small>trophées</small></div>
       <div style="animation-delay:.2s">💎 ${r.gems}<small>${r.gems ? 'record' : 'gemmes'}</small></div>
     </div>
+    ${extras}
     ${!S.premium && payments.mode !== 'off' ? '<p class="tiny">👑 Avec le Pass Royal, tu aurais gagné ' + fmt(r.coins * 2) + ' 🪙</p>' : ''}
-    <div class="row"><button class="btn ghost" data-m="home">Accueil</button><button class="btn" data-m="again">Rejouer</button></div>`,
-  { onBack: () => { closeModal(); battle.stop(); tab('home'); } });
+    <div class="row"><button class="btn ghost" data-m="home">${defi ? 'Classement' : 'Accueil'}</button><button class="btn" data-m="again">Rejouer</button></div>`,
+  { onBack: () => leave(defi ? 'defi' : 'home') });
   const box = $('mbox');
-  box.querySelector('[data-m="home"]').onclick = () => { sfx('click'); closeModal(); battle.stop(); tab('home'); };
-  box.querySelector('[data-m="again"]').onclick = () => { closeModal(); battle.stop(); render(); play(); };
+  // Après la partie : arènes débloquées, puis demande d'autorisation des rappels (une seule fois)
+  async function afterGame() {
+    for (const a of arenas) {
+      await showChestResult(a.chest, `${a.arena.icon} ${a.arena.name}`, `<p>Nouvelle arène atteinte ! Récompense : <b>💎 ${a.gems}</b> et un coffre royal.</p>`);
+    }
+    if (firstGame && notifsAvailable() && S.settings.notifs) {
+      if (await confirmBox({ icon: '🔔', title: 'Rappels', html: '<p>On te prévient quand ton coffre gratuit est prêt et quand le défi se termine ?</p>', ok: 'Oui !', cancel: 'Non merci' })) askPermission();
+      else { S.settings.notifs = false; persist(); }
+    }
+  }
+  function leave(to) { sfx('click'); closeModal(); battle.stop(); tab(to); afterGame(); }
+  box.querySelector('[data-m="home"]').onclick = () => leave(defi ? 'defi' : 'home');
+  box.querySelector('[data-m="again"]').onclick = () => { closeModal(); battle.stop(); render(); (defi ? playChallenge : play)(); };
+  const ps = box.querySelector('[data-m="pseudo"]');
+  if (ps) ps.onclick = async () => { closeModal(); battle.stop(); tab('defi'); if (await askPseudo()) { await sendChallengeScore(); renderDefi(); } afterGame(); };
 }
 
 /* =============== Paiements =============== */
@@ -329,6 +468,18 @@ document.addEventListener('click', (ev) => {
   else if (a === 'buygem') buyGem(el.dataset.id);
   else if (a === 'restore') payments.restore();
   else if (a === 'daily') claimDaily();
+  else if (a === 'defi') playChallenge();
+  else if (a === 'quest') {
+    const res = M.claimQuest(S, Number(el.dataset.i));
+    if (res) { sfx('coins'); haptic('success'); persist(); render(); toast(`Mission accomplie ! ${rewardText(res)}`); }
+  } else if (a === 'questbonus') {
+    const res = M.claimQuestBonus(S);
+    if (res) { persist(true); render(); showChestResult(res, 'Bonus des missions'); }
+  } else if (a === 'mile') {
+    const i = Number(el.dataset.i);
+    if (M.claimChallengeMilestone(S, M.weekKey(), i)) { sfx('coins'); haptic('success'); persist(); render(); toast('Palier du défi : 💎 récupérées !'); }
+  } else if (a === 'pseudo') askPseudo().then((ok) => { if (ok) { sendChallengeScore().then(() => render()); render(); } });
+  else if (a === 'reloadboard') { board = { week: '', data: null, error: '', loading: false }; renderDefi(); }
 });
 $('modal').addEventListener('click', (ev) => { if (ev.target === $('modal') && modalOpen?.onBack) modalOpen.onBack(); });
 
@@ -341,7 +492,7 @@ function onBack() {
 function onHide() {
   if (battle.active && !battle.paused && !battle.state?.over) pauseMenu();
   suspendAudio(true);
-  persist(true);
+  if (S) { persist(true); scheduleReminders(S); }
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden) onHide(); else suspendAudio(false); });
 if (native) {
@@ -354,11 +505,13 @@ setInterval(() => {
   if (!S || battle.active) return;
   renderTop();
   if (currentTab === 'chest') renderChests();
+  if (currentTab === 'home' && !modalOpen) renderHome();
 }, 30000);
 
 /* =============== Démarrage =============== */
 (async function boot() {
   S = await loadState();
+  M.ensureQuests(S);
   applySettings(S.settings);
   render();
   $('loading').classList.add('hide');

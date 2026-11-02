@@ -1,0 +1,25 @@
+rules_version = '2';
+// Classement du défi de la semaine : tout joueur connecté (anonymement) peut lire le classement,
+// mais ne peut écrire QUE son propre score, avec des valeurs plausibles. Tout le reste est interdit.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /defis/{semaine}/scores/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && semaine.matches('^[0-9]{4}-W[0-9]{2}$')
+        && request.resource.data.keys().hasOnly(['pseudo', 'vague', 'kills', 'score', 'maj'])
+        && request.resource.data.pseudo is string
+        && request.resource.data.pseudo.size() >= 3 && request.resource.data.pseudo.size() <= 16
+        && request.resource.data.vague is int && request.resource.data.vague >= 1 && request.resource.data.vague <= 200
+        && request.resource.data.kills is int && request.resource.data.kills >= 0 && request.resource.data.kills <= 99999
+        && request.resource.data.score == request.resource.data.vague * 100000 + request.resource.data.kills
+        && request.resource.data.maj == request.time
+        // un score ne peut jamais baisser
+        && (resource == null || request.resource.data.score >= resource.data.score);
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

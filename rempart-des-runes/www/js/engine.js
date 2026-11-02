@@ -30,19 +30,33 @@ export function cellAt(x, y) {
   return c >= 0 && c < COLS && r >= 0 && r < ROWS ? r * COLS + c : -1;
 }
 export const powerCost = (lvl) => (lvl < MAX_POWER ? B.powerCosts[lvl - 1] : Infinity);
-export const bossForWave = (w) => (w > 0 && w % 5 === 0 ? BOSSES[(w / 5 - 1) % BOSSES.length] : null);
+export const bossForWave = (w, every = 5) => (w > 0 && w % every === 0 ? BOSSES[(w / every - 1) % BOSSES.length] : null);
 export const enemyHp = (wave, mult) => Math.round(B.hpBase * Math.pow(B.hpGrowth, wave - 1) * (1 + wave * B.hpLinear) * mult);
 
+/** Générateur pseudo-aléatoire reproductible (même graine → même partie). */
+export function seededRng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /**
- * @param {{deck:string[], levels:Record<string,number>, rng?:()=>number}} opts
+ * @param {{deck:string[], levels:Record<string,number>, rng?:()=>number,
+ *          mods?:{hpMult?:number, speedMult?:number, startMana?:number, bossEvery?:number, manaMult?:number}}} opts
  */
-export function createBattle({ deck, levels = {}, rng = Math.random }) {
+export function createBattle({ deck, levels = {}, rng = Math.random, mods = {} }) {
   if (!Array.isArray(deck) || deck.length !== DECK_SIZE) throw new Error('Le deck doit contenir 5 runes');
+  const m = { hpMult: 1, speedMult: 1, startMana: B.startMana, bossEvery: 5, manaMult: 1, ...mods };
   return {
-    deck: deck.slice(), levels: { ...levels }, rng,
+    deck: deck.slice(), levels: { ...levels }, rng, mods: m,
     board: new Array(COLS * ROWS).fill(null),
     enemies: [], shots: [], events: [],
-    mana: B.startMana, summonCost: B.summonCost, lives: B.lives,
+    stats: { summons: 0, merges: 0, powerups: 0, bosses: 0 },
+    mana: m.startMana, summonCost: B.summonCost, lives: B.lives,
     wave: 0, queue: [], spawnT: 0, pause: B.firstPause,
     power: Object.fromEntries(deck.map((k) => [k, 1])),
     kills: 0, time: 0, over: false, nextId: 1,
@@ -74,6 +88,7 @@ export function summon(b) {
   b.mana -= b.summonCost;
   b.summonCost += B.summonCostStep;
   b.board[i] = { k: randomRune(b), pip: 1, cd: 0.2 + b.rng() * 0.4, stun: 0 };
+  b.stats.summons++;
   b.events.push({ type: 'summon', i });
   return i;
 }
@@ -89,6 +104,7 @@ export function merge(b, from, to) {
   const pip = b.board[to].pip + 1;
   b.board[from] = null;
   b.board[to] = { k: randomRune(b), pip, cd: 0.3, stun: 0 };
+  b.stats.merges++;
   b.events.push({ type: 'merge', i: to, pip });
   return true;
 }
@@ -102,6 +118,7 @@ export function powerUp(b, slot) {
   const k = b.deck[slot];
   b.mana -= powerCost(b.power[k]);
   b.power[k]++;
+  b.stats.powerups++;
   b.events.push({ type: 'power', k, lvl: b.power[k] });
   return true;
 }
@@ -109,7 +126,7 @@ export function powerUp(b, slot) {
 function startWave(b) {
   b.wave++;
   const w = b.wave, list = [];
-  const boss = bossForWave(w);
+  const boss = bossForWave(w, b.mods.bossEvery);
   if (boss) list.push('boss');
   const n = B.baseCount + Math.floor(w * B.countPerWave);
   for (let i = 0; i < n; i++) {
@@ -127,13 +144,13 @@ function startWave(b) {
 function spawn(b, type, d = 0) {
   const w = b.wave;
   const isBoss = type === 'boss';
-  const t = isBoss ? bossForWave(w) : ENEMIES[type];
-  const hp = enemyHp(w, t.hp);
+  const t = isBoss ? bossForWave(w, b.mods.bossEvery) : ENEMIES[type];
+  const hp = enemyHp(w, t.hp * b.mods.hpMult);
   const [x, y] = posAt(d);
   const e = {
     id: b.nextId++, type, boss: isBoss ? t.id : null, d, x, y, hp, max: hp,
-    spd: t.spd * (1 + w * B.speedGrowth), r: t.r, color: t.color, mana: t.mana,
-    slowT: 0, slowF: 1, poison: 0, poisonT: 0, abilityT: t.every || 0, hit: 0,
+    spd: t.spd * (1 + w * B.speedGrowth) * b.mods.speedMult, r: t.r, color: t.color, mana: Math.round(t.mana * b.mods.manaMult),
+    slowT: 0, slowF: 1, poison: 0, poisonT: 0, stunT: 0, abilityT: t.every || 0, every: t.every || 0, hit: 0,
   };
   b.enemies.push(e);
   if (isBoss) b.events.push({ type: 'boss', id: t.id });
@@ -147,7 +164,12 @@ function hurt(b, e, dmg) {
   if (e.hp <= 0) {
     b.mana += e.mana;
     b.kills++;
+    if (e.boss) b.stats.bosses++;
     b.events.push({ type: 'kill', x: e.x, y: e.y, color: e.color, boss: !!e.boss, mana: e.mana });
+    if (e.boss === 'hydre') {
+      for (let i = 0; i < 3; i++) spawn(b, 'tete', Math.max(0, e.d - i * 16));
+      b.events.push({ type: 'ability', id: 'hydre', x: e.x, y: e.y });
+    }
   }
 }
 
@@ -200,6 +222,28 @@ function impact(b, s) {
       e.poison = Math.max(e.poison, s.dmg * 2.2);
       e.poisonT = 3;
       break;
+    case 'heavy':
+      hurt(b, e, e.boss || e.type === 'tank' ? s.dmg * 2 : s.dmg);
+      b.events.push({ type: 'splash', x: e.x, y: e.y, r: 14, color: def.color });
+      break;
+    case 'all':
+      for (const o of b.enemies) if (o.hp > 0) hurt(b, o, s.dmg);
+      b.events.push({ type: 'tide', color: def.color });
+      break;
+    case 'stun':
+      hurt(b, e, s.dmg);
+      e.stunT = Math.max(e.stunT, (0.35 + 0.08 * s.pip) * (e.boss ? 0.4 : 1));
+      break;
+    case 'dragon': {
+      const R = 34 + s.pip * 2;
+      for (const o of b.enemies) {
+        if (o.hp <= 0 || Math.hypot(o.x - e.x, o.y - e.y) >= R) continue;
+        hurt(b, o, o === e ? s.dmg : s.dmg * 0.5);
+        o.poison = Math.max(o.poison, s.dmg * 0.8); o.poisonT = Math.max(o.poisonT, 2);
+      }
+      b.events.push({ type: 'splash', x: e.x, y: e.y, r: R, color: def.color });
+      break;
+    }
     case 'reap':
       if (!e.boss && b.rng() < 0.02 * s.pip) {
         b.events.push({ type: 'reap', x: e.x, y: e.y });
@@ -249,10 +293,11 @@ export function step(b, dt) {
     if (e.hit > 0) e.hit -= dt;
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowF = 1; }
     if (e.poisonT > 0) { e.poisonT -= dt; hurt(b, e, e.poison * dt); if (e.hp <= 0) continue; }
-    if (e.abilityT) {
+    if (e.every) {
       e.abilityT -= dt;
-      if (e.abilityT <= 0) { bossAbility(b, e); e.abilityT = bossForWave(b.wave)?.every || 4; }
+      if (e.abilityT <= 0) { bossAbility(b, e); e.abilityT = e.every; }
     }
+    if (e.stunT > 0) { e.stunT -= dt; continue; }
     e.d += e.spd * e.slowF * dt;
     [e.x, e.y] = posAt(e.d);
     if (e.d >= PATH_LEN) {

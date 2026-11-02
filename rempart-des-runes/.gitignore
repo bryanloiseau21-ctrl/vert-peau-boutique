@@ -5,3 +5,5 @@ node_modules/
 android/app/build/
 android/.gradle/
 ios/App/build/
+firebase-debug.log
+firestore-debug.log
