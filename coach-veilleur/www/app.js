@@ -119,9 +119,9 @@ function anneau(valeur, couleur, centre, sous, taille = 120) {
   const R = 48, C = 2 * Math.PI * R, v = Math.max(0, Math.min(1, valeur));
   return `<svg viewBox="0 0 ${taille} ${taille}" role="img" aria-label="${esc(sous)} ${esc(centre)}">
     <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--carte-2)" stroke-width="10"/>
-    <circle cx="60" cy="60" r="${R}" fill="none" stroke="${couleur}" stroke-width="10" stroke-linecap="round"
-      stroke-dasharray="${(v * C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 60 60)"/>
-    <text class="anneau-texte" x="60" y="${sous ? 64 : 70}" text-anchor="middle" font-size="${String(centre).length > 4 ? 25 : 31}">${esc(centre)}</text>
+    ${v > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${couleur}" stroke-width="10" stroke-linecap="round"
+      stroke-dasharray="${(v * C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 60 60)"/>` : ''}
+    <text class="anneau-texte" x="60" y="${sous ? 64 : 70}" text-anchor="middle" style="font-size:${String(centre).length > 4 ? 24 : 30}px">${esc(centre)}</text>
     ${sous ? `<text class="anneau-sous" x="60" y="80" text-anchor="middle">${esc(sous)}</text>` : ''}</svg>`;
 }
 const couleurForme = f => (f >= 0.67 ? 'vert' : f >= 0.34 ? 'jaune' : 'rouge');
@@ -135,6 +135,11 @@ function blocCharge(r, e, ex) {
     <button class="rond mini" data-a="charge" data-v="1" aria-label="Plus lourd">+</button></div>
     ${kg ? '' : '<span class="muet" style="font-size:.85rem">Première fois : choisis une charge que tu peux soulever ' + ex.cible + ' fois proprement.</span>'}</div>`;
 }
+const MOTS_ECHELLE = {
+  energie: ['Vidé', 'Fatigué', 'Correct', 'En forme', 'Plein d’énergie'],
+  sommeil: ['Nuit blanche', 'Mauvaise nuit', 'Nuit moyenne', 'Bonne nuit', 'Nuit parfaite'],
+  courbatures: ['Aucune', 'Légères', 'Présentes', 'Fortes', 'Partout'],
+};
 const explication = (titre, corps) => `<details class="explication"><summary>${titre}</summary>${corps}</details>`;
 const dateLongue = () => new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -204,7 +209,7 @@ const ecrans = {
     const forme = C.formeDuJour(ck);
     const echelle = (champ, bas, haut) => `<div class="champ"><div class="echelle">${[1, 2, 3, 4, 5].map(n =>
       `<button class="puce" aria-pressed="${ck[champ] === n}" data-a="checkin" data-c="${champ}" data-v="${n}" aria-label="${champ} ${n} sur 5">${n}</button>`).join('')}</div>
-      <div class="echelle-legende"><span>${bas}</span><span>${haut}</span></div></div>`;
+      <div class="echelle-legende"><span>${bas}</span><strong>${MOTS_ECHELLE[champ][ck[champ] - 1] || ''}</strong><span>${haut}</span></div></div>`;
     const dejaFaite = etat.historique.at(-1)?.date === aujourdhui();
     const cf = couleurForme(forme);
     const regul = b.objectif ? b.faites / b.objectif : 0;
@@ -212,9 +217,9 @@ const ecrans = {
     return `<div class="ecran">
       ${entete()}
       <div class="scores">
-        <button class="score" data-a="aller" data-v="accueil" aria-label="Forme ${Math.round(forme * 100)} %">${anneau(forme, `var(--${cf})`, `${Math.round(forme * 100)}%`, '')}<span class="etiquette">Forme</span></button>
-        <button class="score" data-a="aller" data-v="progres">${anneau(regul, 'var(--bleu)', `${b.faites}/${b.objectif}`, '')}<span class="etiquette">Semaine</span></button>
-        <button class="score" data-a="aller" data-v="calories">${bn ? anneau(bn.total.kcal / bn.cible, 'var(--orange)', String(bn.total.kcal), `/ ${bn.cible}`) : anneau(0, 'var(--orange)', '—', 'à régler')}<span class="etiquette">Calories</span></button>
+        <button class="score" data-a="aller" data-v="accueil" aria-label="Forme ${Math.round(forme * 100)} %">${anneau(forme, `var(--${cf})`, `${Math.round(forme * 100)}%`, '')}<span class="score-titre">Forme</span><span class="score-sous" style="color:var(--${cf})">${motForme[cf]}</span></button>
+        <button class="score" data-a="aller" data-v="progres">${anneau(regul, 'var(--bleu)', `${b.faites}/${b.objectif}`, '')}<span class="score-titre">Semaine</span><span class="score-sous">${b.faites >= b.objectif ? 'Objectif atteint' : `Encore ${b.objectif - b.faites} séance${b.objectif - b.faites > 1 ? 's' : ''}`}</span></button>
+        <button class="score" data-a="aller" data-v="calories">${bn ? anneau(bn.total.kcal / bn.cible, 'var(--orange)', String(bn.total.kcal), `/ ${bn.cible}`) : anneau(0, 'var(--orange)', '—', 'à régler')}<span class="score-titre">Calories</span><span class="score-sous">${bn ? (bn.reste >= 0 ? `${bn.reste} restantes` : `${-bn.reste} en trop`) : 'Profil à compléter'}</span></button>
       </div>
       <div class="plaque">
         <div class="macro-tete"><span class="etat ${cf}">${motForme[cf]}</span><span class="num muet">Forme ${Math.round(forme * 100)} %</span></div>
@@ -240,11 +245,18 @@ const ecrans = {
 
   apercu() {
     const s = S.seance;
-    const lignes = s.exercices.map((e, i) => `<div class="item">
-      <span class="code">${String(i + 1).padStart(2, '0')}</span>
-      <div class="corps-item"><h3>${esc(e.nom)}</h3><span class="dosage">${dosage(e)}</span></div>
-      ${e.chaine ? `<button class="btn second petit" data-a="remplacer" data-v="${i}" aria-label="Remplacer ${esc(e.nom)}">Changer</button>` : ''}
-    </div>`).join('');
+    const lignes = s.exercices.map((e, i) => {
+      const prog = e.chaine ? C.etapeProgression(S.etat, e.chaine) : null;
+      return `<div class="exo">
+      <div class="item">
+        <span class="code">${i + 1}</span>
+        <div class="corps-item"><h3>${esc(e.nom)}</h3><span class="dosage">${dosage(e)}</span>
+          ${e.chaine ? `<div class="tags"><span class="tag">${esc(C.MUSCLES[e.chaine] || '')}</span>${prog?.niveau ? `<span class="tag">Niveau ${prog.niveau}/${prog.total}</span>` : ''}</div>` : ''}</div>
+        ${e.chaine ? `<button class="btn second petit" data-a="remplacer" data-v="${i}" aria-label="Remplacer ${esc(e.nom)}">Changer</button>` : ''}
+      </div>
+      ${explication('Comment le faire', `<p>${esc(e.consigne)}</p>${prog ? `<p><strong>Progression</strong> : ${esc(prog.reste)}${prog.suivante ? `, prochaine étape : ${esc(prog.suivante)}` : ''}.</p>` : ''}<p>Repos : ${e.repos} s entre les séries.</p>`)}
+    </div>`;
+    }).join('');
     const mob = l => l.map(m => `${esc(m.nom)} (${m.duree} s)`).join(' · ');
     return `<div class="ecran">
       <div><div class="etiquette">Séance du ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
@@ -302,7 +314,8 @@ const ecrans = {
     return `<div class="ecran">${haut}${confirm}
       <div class="plaque hud">
         <span class="etiquette">Série ${e.s + 1} / ${ex.series}</span>
-        <h2 style="text-transform:none;letter-spacing:0;font-size:1.4rem">${esc(ex.nom)}</h2>
+        <h2 style="font-size:1.45rem">${esc(ex.nom)}</h2>
+        ${ex.chaine ? `<div class="tags" style="justify-content:center"><span class="tag">${esc(C.MUSCLES[ex.chaine] || '')}</span></div>` : ''}
         ${temps && enCours
           ? `<div class="cible" id="chrono">${format(Math.ceil((r.chrono.fin - Date.now()) / 1000))}</div><span class="unite">tiens bon</span><div class="barre" style="width:100%"><i id="chrono-barre" style="width:0"></i></div>`
           : `${ex.mode === 'charge' ? blocCharge(r, e, ex) : ''}<div class="cible num">${val}</div><span class="unite">${temps ? 'secondes' : 'répétitions'}${val !== ex.cible ? ` · objectif ${ex.cible}` : ''}</span>
@@ -357,7 +370,8 @@ const ecrans = {
     const niveaux = utilisees.map(c => {
       const st = etat.chaines[c.id];
       if (c.mode === 'charge') return `<div class="niveau"><span>${esc(c.variantes[0])}</span><span class="num muet">${st.charge ? `${st.charge} kg × ${st.cible}` : 'charge à trouver'}</span></div>`;
-      return `<div class="niveau"><span>${esc(c.variantes[st.rang])}</span><span class="num muet">${c.mode === 'temps' ? (st.cible >= 60 ? `${format(st.cible)} min` : `${st.cible} s`) : `${st.cible} rép.`}</span>
+      const pr = C.etapeProgression(etat, c.id);
+      return `<div class="niveau"><span>${esc(c.variantes[st.rang])}<br><small class="muet">${esc(pr.suivante ? `Ensuite : ${pr.suivante}` : pr.reste)}</small></span><span class="num muet">${c.mode === 'temps' ? (st.cible >= 60 ? `${format(st.cible)} min` : `${st.cible} s`) : `${st.cible} rép.`}</span>
         <div class="crans">${c.variantes.map((_, i) => `<span class="${i <= st.rang ? 'on' : ''}"></span>`).join('')}</div></div>`;
     }).join('');
     return `<div class="ecran">
@@ -395,13 +409,13 @@ const ecrans = {
     const b = N.bilanJour(p, S.nutri, S.etat.historique, j);
     const ratio = Math.min(1, b.total.kcal / b.cible);
     const depasse = b.reste < 0;
-    const anneauCal = `<div style="width:190px;max-width:100%">${anneau(ratio, depasse ? 'var(--rouge)' : 'var(--orange)', String(Math.abs(b.reste)), depasse ? 'KCAL EN TROP' : 'KCAL RESTANTES')}</div>`;
+    const anneauCal = `<div style="width:190px;max-width:100%">${anneau(ratio, depasse ? 'var(--rouge)' : 'var(--orange)', String(Math.abs(b.reste)), depasse ? 'kcal en trop' : 'kcal restantes')}</div>`;
     const macro = (nom, val, cible, cls, unite = 'g') => `<div class="macro ${cls}"><div class="macro-tete"><span class="etiquette">${nom}</span><span class="num">${Math.round(val)} / ${cible} ${unite}</span></div>
       <div class="barre"><i style="width:${Math.min(100, (val / cible) * 100)}%"></i></div></div>`;
     const parRepas = Object.entries(N.REPAS).map(([k, nom]) => {
       const items = b.entrees.filter(e => e.repas === k);
       if (!items.length) return '';
-      return `<div class="groupe-repas"><div class="macro-tete"><span class="etiquette">${nom}</span><span class="num muet">${items.reduce((a, e) => a + e.kcal, 0)} kcal</span></div>
+      return `<div class="groupe-repas"><div class="macro-tete"><span class="etiquette">${nom}</span><span class="num muet">${items.reduce((a, e) => a + e.kcal, 0)} kcal · ${Math.round(items.reduce((a, e) => a + e.p, 0))} g protéines</span></div>
         ${items.map(e => `<div class="item"><div class="corps-item"><h3>${esc(e.nom)}</h3><span class="muet num" style="font-size:.85rem">${e.grammes ? `${e.grammes} g · ` : ''}P ${e.p} · G ${e.g} · L ${e.l}${e.source === 'photo' ? ' · photo' : ''}</span></div>
           <span class="dosage">${e.kcal}</span><button class="rond mini" data-a="supprimerEntree" data-v="${e.id}" aria-label="Supprimer ${esc(e.nom)}">×</button></div>`).join('')}</div>`;
     }).join('');

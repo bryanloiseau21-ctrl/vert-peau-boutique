@@ -425,3 +425,33 @@ export function exemple(aujourdhui = jour()) {
   });
   return { profil, etat };
 }
+
+// Muscles travaillés par chaque progression (affichés dans le détail des exercices).
+export const MUSCLES = {
+  pompes: 'Pectoraux, triceps, épaules', dips: 'Triceps, pectoraux', 'dev-halteres': 'Épaules, pectoraux, triceps',
+  'rowing-table': 'Dos, biceps', 'rowing-halteres': 'Dos, biceps, arrière d’épaule', elastique: 'Dos, arrière d’épaule',
+  tractions: 'Grand dorsal, biceps', squat: 'Quadriceps, fessiers', fentes: 'Quadriceps, fessiers, équilibre',
+  pont: 'Fessiers, ischios', goblet: 'Quadriceps, fessiers, gainage', souleve: 'Ischios, fessiers, bas du dos',
+  planche: 'Abdominaux profonds', 'dead-bug': 'Abdominaux, coordination', lateral: 'Obliques, hanches',
+  'cardio-doux': 'Cœur, endurance', 'cardio-impact': 'Cœur, explosivité', 'chest-press': 'Pectoraux, triceps',
+  'pec-deck': 'Pectoraux', 'shoulder-press': 'Épaules, triceps', 'triceps-poulie': 'Triceps',
+  'tirage-vertical': 'Grand dorsal, biceps', 'tirage-horizontal': 'Milieu du dos, biceps', 'curl-poulie': 'Biceps',
+  presse: 'Quadriceps, fessiers', 'leg-curl': 'Ischios', 'leg-extension': 'Quadriceps', abducteurs: 'Moyen fessier',
+  'crunch-machine': 'Abdominaux', 'cardio-machine': 'Cœur, endurance',
+};
+
+// Où en est une progression : niveau actuel, prochaine variante, ce qu'il reste pour y arriver.
+export function etapeProgression(etat, id) {
+  const c = chaine(id);
+  if (!c) return null;
+  const st = etat.chaines[id] || { rang: 0, cible: bornesDe(c).depart, charge: null };
+  const b = bornesDe(c);
+  if (c.mode === 'charge') {
+    return { niveau: null, total: null, suivante: st.charge ? `${Math.round((st.charge + c.pasKg) * 10) / 10} kg` : null,
+      reste: st.charge ? `${Math.max(1, b.max + 1 - st.cible)} rép. de plus par série à ${st.charge} kg` : 'Note ta charge pendant la séance' };
+  }
+  const suivante = c.variantes[st.rang + 1] || null;
+  const unite = c.mode === 'temps' ? 's' : 'rép.';
+  return { niveau: st.rang + 1, total: c.variantes.length, suivante,
+    reste: suivante ? `Atteins ${b.max + b.pas} ${unite} pour débloquer` : 'Dernier niveau de cette progression' };
+}

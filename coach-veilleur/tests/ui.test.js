@@ -90,7 +90,7 @@ try {
 
   // Calories : profil exemple complet, ajout manuel, analyse photo simulée.
   await clic('.onglet[data-v="calories"]');
-  await page.waitForSelector('text=KCAL RESTANTES');
+  await page.waitForSelector('text=kcal restantes');
   await clic('text=Ajouter à la main');
   await page.fill('#recherche', 'banane');
   await clic('[data-a="choisirAliment"]');
@@ -106,7 +106,7 @@ try {
   });
   await page.reload();
   await clic('.onglet[data-v="calories"]');
-  await page.waitForSelector('text=KCAL RESTANTES');
+  await page.waitForSelector('text=kcal restantes');
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
   await page.setInputFiles('#galerie', { name: 'repas.png', mimeType: 'image/png', buffer: png });
   await page.waitForSelector('text=Voilà ce que je vois');
