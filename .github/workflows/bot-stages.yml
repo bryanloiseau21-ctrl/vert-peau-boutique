@@ -65,6 +65,10 @@ jobs:
           (cd aides-etudiants && node scripts/lieux.js) || echo "::warning::Lieux CROUS indisponibles"
           cp -r aides-etudiants/www bot-stages/app/aides
 
+      # Rempart des Runes (jeu) publié sous /rempart/ (achats simulés sur le web)
+      - name: Ajouter Rempart des Runes
+        run: cp -r rempart-des-runes/www bot-stages/app/rempart
+
       - name: Préparer l'appli
         if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         uses: actions/upload-pages-artifact@v3

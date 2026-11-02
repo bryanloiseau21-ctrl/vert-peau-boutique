@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="35%" r="75%"><stop offset="0" stop-color="#4b2f9a"/><stop offset="1" stop-color="#140d2e"/></radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffd24d" stop-opacity=".9"/><stop offset="1" stop-color="#ffd24d" stop-opacity="0"/></radialGradient>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9d0f5"/><stop offset="1" stop-color="#8e7fc4"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="0" fill="url(#bg)"/>
+  <circle cx="256" cy="250" r="190" fill="url(#glow)" opacity=".35"/>
+  <!-- château -->
+  <g fill="url(#wall)" stroke="#2a1f55" stroke-width="10" stroke-linejoin="round">
+    <path d="M118 410 V250 h-14 v-52 h34 v26 h28 v-26 h34 v52 h-14 v40 h140 v-40 h-14 v-52 h34 v26 h28 v-26 h34 v52 h-14 V410 Z"/>
+    <path d="M206 290 V170 h-14 v-48 h30 v22 h20 v-22 h28 v22 h20 v-22 h30 v48 h-14 V290 Z"/>
+  </g>
+  <path d="M232 410 v-58 a24 24 0 0 1 48 0 v58 z" fill="#2a1f55"/>
+  <!-- rune -->
+  <g transform="translate(256 220)">
+    <circle r="34" fill="#ffc94d" stroke="#2a1f55" stroke-width="8"/>
+    <path d="M-12 -18 L12 0 L-12 18 M8 -18 V18" stroke="#2a1f55" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <circle cx="132" cy="120" r="5" fill="#fff" opacity=".7"/><circle cx="392" cy="96" r="4" fill="#fff" opacity=".6"/><circle cx="420" cy="170" r="3" fill="#fff" opacity=".5"/>
+</svg>

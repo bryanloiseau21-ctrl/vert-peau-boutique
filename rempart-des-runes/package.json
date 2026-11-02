@@ -1,0 +1,33 @@
+{
+  "name": "rempart-des-runes",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Tower defense à fusion : invoque, fusionne et défends le rempart.",
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes serve www -l 8080",
+    "test": "node --test tests/logique.test.js && node tests/ui.test.js",
+    "test:logique": "node --test tests/logique.test.js",
+    "equilibrage": "node scripts/equilibrage.js",
+    "icones": "node scripts/icones.js",
+    "assets": "capacitor-assets generate --android --ios --iconBackgroundColor '#1a1430' --splashBackgroundColor '#1a1430'",
+    "sync": "cap sync",
+    "firebase": "node scripts/vendor-firebase.js",
+    "test:classement": "npx --yes firebase-tools@14 emulators:exec --only auth,firestore --project demo-rempart \"node tests/classement.test.js\""
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.6.0",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capgo/native-purchases": "^8.9.6",
+    "firebase": "^12.19.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.0"
+  }
+}

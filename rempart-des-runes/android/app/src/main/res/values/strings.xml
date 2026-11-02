@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Rempart des Runes</string>
+    <string name="title_activity_main">Rempart des Runes</string>
+    <string name="package_name">fr.rempartdesrunes.app</string>
+    <string name="custom_url_scheme">fr.rempartdesrunes.app</string>
+</resources>
