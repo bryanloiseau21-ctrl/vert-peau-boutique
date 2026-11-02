@@ -61,3 +61,12 @@ test('exemple de journal cohérent', () => {
   assert.ok(e.journal.some(x => x.date === '2026-11-02'));
   assert.equal(e.pesees.length, 4);
 });
+
+test('objectifs personnalisés : ils remplacent le calcul', () => {
+  const o = N.objectifJour(profil, { perso: { kcal: 2400, p: 180 } });
+  assert.equal(o.kcal, 2400);
+  assert.equal(o.p, 180);
+  assert.equal(o.calcule, 1820);
+  assert.ok(o.perso);
+  assert.equal(N.objectifJour(profil, { perso: { kcal: 300 } }).kcal, 1820, 'valeur absurde ignorée');
+});

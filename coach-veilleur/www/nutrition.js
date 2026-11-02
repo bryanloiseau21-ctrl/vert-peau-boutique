@@ -54,11 +54,13 @@ export function objectifJour(profil, nutri = {}) {
   const entretien = base * FACTEUR[profil.activite];
   const correction = { perte: -0.15, muscle: 0.1, endurance: 0.05, forme: 0 }[profil.objectif] ?? 0;
   const plancher = profil.sexe === 'homme' ? 1500 : 1200;
-  const kcal = Math.max(plancher, Math.round((entretien * (1 + correction) + (nutri.ajustement || 0)) / 10) * 10);
-  const p = Math.round(poids * (['muscle', 'perte'].includes(profil.objectif) ? 2 : 1.6));
+  const calcule = Math.max(plancher, Math.round((entretien * (1 + correction) + (nutri.ajustement || 0)) / 10) * 10);
+  // Objectifs choisis à la main dans l'appli : ils remplacent le calcul.
+  const kcal = nutri.perso?.kcal >= 800 ? Math.round(nutri.perso.kcal) : calcule;
+  const p = nutri.perso?.p > 0 ? Math.round(nutri.perso.p) : Math.round(poids * (['muscle', 'perte'].includes(profil.objectif) ? 2 : 1.6));
   const l = Math.round(poids * 0.9);
   const g = Math.max(0, Math.round((kcal - p * 4 - l * 9) / 4));
-  return { kcal, p, g, l, entretien: Math.round(entretien), poids };
+  return { kcal, p, g, l, entretien: Math.round(entretien), poids, calcule, perso: !!(nutri.perso?.kcal >= 800 || nutri.perso?.p > 0) };
 }
 
 // Calories dépensées par une séance (MET moyen × poids × durée).

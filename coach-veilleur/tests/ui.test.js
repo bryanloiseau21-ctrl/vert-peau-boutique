@@ -50,6 +50,16 @@ try {
   const texte = await page.textContent('#app');
   assert.ok(!/Squat|Fentes/.test(texte), 'genoux protégés');
 
+  // Séance modifiable : une série de plus sur le 1er exercice, ajout d'un exercice depuis la bibliothèque.
+  await clic('.exo details summary');
+  const seriesAvant = await page.locator('.reglage-ligne .num').first().textContent();
+  await clic('[data-a="modExo"][data-c="series:1"]');
+  assert.equal(Number(await page.locator('.reglage-ligne .num').first().textContent()), Number(seriesAvant) + 1);
+  const nbExos = await page.locator('.exo').count();
+  await clic('text=Ajouter un exercice');
+  await clic('[data-a="ajouterExo"]');
+  await page.waitForSelector('text=Lancer la séance');
+  assert.equal(await page.locator('.exo').count(), nbExos + 1);
   await clic('text=Lancer la séance');
   // Échauffement : on passe les étapes de mobilité, puis on valide toutes les séries.
   for (let i = 0; i < 60; i++) {
@@ -97,6 +107,18 @@ try {
   await clic('[data-a="grammesChoix"][data-v="10"]');
   await clic('[data-a="ajouterChoix"]');
   await page.waitForSelector('text=Banane');
+  // Modifier un aliment noté : quantité et repas.
+  await clic('.lien-entree:has-text("Banane")');
+  await page.waitForSelector('#edKcal');
+  await clic('[data-a="edGrammes"][data-v="1"]');
+  await clic('[data-a="edRepas"][data-v="diner"]');
+  await clic('[data-a="edEnregistrer"]');
+  await page.waitForSelector('text=Modifié');
+  // Objectifs personnalisés.
+  await clic('[data-a="aller"][data-v="objectifs"]');
+  await page.fill('#persoKcal', '2500');
+  await clic('[data-a="enregistrerObjectifs"]');
+  await page.waitForSelector('.equation:has-text("2500")');
   // Faux moteur d'analyse : la page croit tourner dans claude.ai.
   await page.addInitScript(() => {
     window.claude = { use: async () => ({

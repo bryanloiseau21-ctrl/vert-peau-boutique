@@ -121,3 +121,11 @@ test('salle de sport : machines proposées en priorité, progression par la char
   assert.equal(e2.chaines[ex.chaine].charge, 40 + C.chaine(ex.chaine).pasKg);
   assert.equal(e2.chaines[ex.chaine].cible, 8);
 });
+
+test('ajout manuel d’un exercice depuis la bibliothèque', () => {
+  const etat = C.etatInitial(profil);
+  const l = C.ligneExercice('presse', etat, 4, 90);
+  assert.equal(l.series, 4);
+  assert.equal(l.mode, 'charge');
+  assert.equal(C.ligneExercice('inconnu', etat), null);
+});

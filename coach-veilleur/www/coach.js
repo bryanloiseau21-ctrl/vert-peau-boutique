@@ -455,3 +455,11 @@ export function etapeProgression(etat, id) {
   return { niveau: st.rang + 1, total: c.variantes.length, suivante,
     reste: suivante ? `Atteins ${b.max + b.pas} ${unite} pour débloquer` : 'Dernier niveau de cette progression' };
 }
+
+// Ligne d'exercice prête à ajouter à une séance (ajout manuel depuis la bibliothèque).
+export function ligneExercice(id, etat, series = 3, repos = 60) {
+  const c = chaine(id);
+  return c ? ligne(c, etat, etat.charge || 1, series, repos) : null;
+}
+
+export const NOMS_MOTIFS = { pousser: 'Pousser (pecs, épaules, triceps)', tirer: 'Tirer (dos, biceps)', jambes: 'Jambes et fessiers', gainage: 'Gainage et abdos', cardio: 'Cardio' };

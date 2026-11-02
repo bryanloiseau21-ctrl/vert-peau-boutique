@@ -254,7 +254,14 @@ const ecrans = {
           ${e.chaine ? `<div class="tags"><span class="tag">${esc(C.MUSCLES[e.chaine] || '')}</span>${prog?.niveau ? `<span class="tag">Niveau ${prog.niveau}/${prog.total}</span>` : ''}</div>` : ''}</div>
         ${e.chaine ? `<button class="btn second petit" data-a="remplacer" data-v="${i}" aria-label="Remplacer ${esc(e.nom)}">Changer</button>` : ''}
       </div>
-      ${explication('Comment le faire', `<p>${esc(e.consigne)}</p>${prog ? `<p><strong>Progression</strong> : ${esc(prog.reste)}${prog.suivante ? `, prochaine étape : ${esc(prog.suivante)}` : ''}.</p>` : ''}<p>Repos : ${e.repos} s entre les séries.</p>`)}
+      ${explication('Détails et réglages', `<p>${esc(e.consigne)}</p>${prog ? `<p><strong>Progression</strong> : ${esc(prog.reste)}${prog.suivante ? `, prochaine étape : ${esc(prog.suivante)}` : ''}.</p>` : ''}
+        <div class="reglages-exo">
+          ${reglageExo(i, 'series', 'Séries', e.series)}
+          ${reglageExo(i, 'cible', e.mode === 'temps' ? 'Secondes' : 'Répétitions', e.cible)}
+          ${e.mode === 'charge' ? reglageExo(i, 'charge', 'Charge (kg)', e.charge ?? '—') : ''}
+          ${reglageExo(i, 'repos', 'Repos (s)', e.repos)}
+        </div>
+        <button class="lien" data-a="retirerExo" data-v="${i}">Retirer cet exercice</button>`)}
     </div>`;
     }).join('');
     const mob = l => l.map(m => `${esc(m.nom)} (${m.duree} s)`).join(' · ');
@@ -268,6 +275,7 @@ const ecrans = {
       <div class="plaque"><span class="etiquette">Programme · ${s.exercices[0]?.repos || 30} s de repos entre les séries</span><div class="liste">${lignes}</div>
         <p class="muet" style="font-size:.85rem">Un exercice ne te plaît pas ? Change-le. Après deux refus, Veilleur ne te le propose plus.</p></div>
       ${s.retour.length ? `<div class="plaque"><span class="etiquette">Retour au calme</span><p>${mob(s.retour)}</p></div>` : ''}
+      <button class="btn second" data-a="ouvrirBiblio" data-v="seance">Ajouter un exercice</button>
       <button class="btn" data-a="lancer">Lancer la séance</button>
       <button class="btn second" data-a="aller" data-v="accueil">Retour</button>
     </div>`;
@@ -390,11 +398,13 @@ const ecrans = {
       <div class="plaque"><h2>8 dernières semaines</h2>
         <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Séances par semaine">${ligneObj}${barres}</svg></div>
         <p class="muet" style="font-size:.85rem">${b.serie ? `Série en cours : ${b.serie} semaine${b.serie > 1 ? 's' : ''}.` : 'En jaune : semaines où tu as tenu ton objectif.'}</p></div>
+      <button class="btn second" data-a="ouvrirBiblio" data-v="consulter">Voir tous les exercices</button>
       <div class="plaque"><h2>Tes progressions</h2>
         ${niveaux || '<p class="muet">Fais ta première séance : tes niveaux s’afficheront ici.</p>'}</div>
-      <div class="plaque"><h2>Journal</h2><div class="liste">${h.slice(-10).reverse().map(x => `<div class="item">
+      <div class="plaque"><h2>Journal</h2><div class="liste">${h.slice(-10).reverse().map((x, idx) => `<div class="item">
         <div class="corps-item"><h3>${esc(x.titre || 'Séance')}</h3><span class="muet num" style="font-size:.85rem">${new Date(x.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} · ${x.minutes} min · ${C.RESSENTIS[x.ressenti] || ''}</span></div>
-        <span class="dosage" style="color:${x.reussite >= 95 ? 'var(--vert)' : 'var(--texte)'}">${x.reussite} %</span></div>`).join('') || '<p class="muet">Aucune séance pour l’instant.</p>'}</div></div>
+        <span class="dosage" style="color:${x.reussite >= 95 ? 'var(--vert)' : 'var(--texte)'}">${x.reussite} %</span>
+        <button class="rond mini" data-a="supprimerSeanceHisto" data-v="${h.length - 1 - idx}" aria-label="Supprimer cette séance du journal">×</button></div>`).join('') || '<p class="muet">Aucune séance pour l’instant.</p>'}</div></div>
     </div>`;
   },
 
@@ -416,7 +426,7 @@ const ecrans = {
       const items = b.entrees.filter(e => e.repas === k);
       if (!items.length) return '';
       return `<div class="groupe-repas"><div class="macro-tete"><span class="etiquette">${nom}</span><span class="num muet">${items.reduce((a, e) => a + e.kcal, 0)} kcal · ${Math.round(items.reduce((a, e) => a + e.p, 0))} g protéines</span></div>
-        ${items.map(e => `<div class="item"><div class="corps-item"><h3>${esc(e.nom)}</h3><span class="muet num" style="font-size:.85rem">${e.grammes ? `${e.grammes} g · ` : ''}P ${e.p} · G ${e.g} · L ${e.l}${e.source === 'photo' ? ' · photo' : ''}</span></div>
+        ${items.map(e => `<div class="item"><div class="corps-item"><h3><button class="lien-entree" data-a="editerEntree" data-v="${e.id}">${esc(e.nom)}</button></h3><span class="muet num" style="font-size:.85rem">${e.grammes ? `${e.grammes} g · ` : ''}P ${e.p} · G ${e.g} · L ${e.l}${e.source === 'photo' ? ' · photo' : ''}</span></div>
           <span class="dosage">${e.kcal}</span><button class="rond mini" data-a="supprimerEntree" data-v="${e.id}" aria-label="Supprimer ${esc(e.nom)}">×</button></div>`).join('')}</div>`;
     }).join('');
     const pesees = [...S.nutri.pesees].sort((a, x) => a.date.localeCompare(x.date));
@@ -438,7 +448,9 @@ const ecrans = {
           <li><strong>Entretien : ${b.obj.entretien} kcal</strong>. Ce que ton corps dépense par jour, calculé avec la formule de Mifflin-St Jeor (poids ${b.obj.poids} kg, taille, âge, sexe) multipliée par ton activité quotidienne.</li>
           <li><strong>Objectif : ${b.obj.kcal} kcal</strong>. ${{ perte: 'Entretien −15 % pour perdre du gras sans perdre de muscle.', muscle: 'Entretien +10 % pour construire du muscle.', endurance: 'Entretien +5 % pour soutenir l’entraînement.', forme: 'Égal à ton entretien pour rester stable.' }[p.objectif]}${S.nutri.ajustement ? ` Corrigé de ${S.nutri.ajustement > 0 ? '+' : ''}${S.nutri.ajustement} kcal d’après tes pesées.` : ''}</li>
           <li><strong>Sport : +${b.sport} kcal</strong>. Les séances du jour te donnent des calories en plus.</li>
-          <li><strong>Protéines</strong> : ${['muscle', 'perte'].includes(p.objectif) ? '2' : '1,6'} g par kg de poids. <strong>Lipides</strong> : 0,9 g par kg. <strong>Glucides</strong> : le reste.</li></ul>`)}</div>
+          <li><strong>Protéines</strong> : ${['muscle', 'perte'].includes(p.objectif) ? '2' : '1,6'} g par kg de poids. <strong>Lipides</strong> : 0,9 g par kg. <strong>Glucides</strong> : le reste.</li>
+          ${b.obj.perso ? '<li><strong>Tu as mis tes propres objectifs</strong> : ils remplacent le calcul.</li>' : ''}</ul>`)}
+        <button class="btn second petit" data-a="aller" data-v="objectifs">${b.obj.perso ? 'Modifier mes objectifs' : 'Choisir mes propres objectifs'}</button></div>
       <label class="btn" for="photo" role="button" tabindex="0">Photographier mon repas</label>
       <input type="file" id="photo" accept="image/*" capture="environment" hidden>
       <div class="rangee-btn">
@@ -448,7 +460,7 @@ const ecrans = {
       </div>
       ${ui.moteur ? '' : '<p class="muet" style="font-size:.88rem">Pour que les photos se calculent toutes seules, ajoute ta clé API Claude dans <button class="lien" data-a="aller" data-v="reglages">Profil</button>.</p>'}
       ${carteComplements(false)}
-      <div class="plaque"><h2>Aujourd’hui</h2>${parRepas || '<p class="muet">Rien de noté. Prends ton prochain repas en photo.</p>'}</div>
+      <div class="plaque"><h2>Aujourd’hui</h2>${parRepas ? `${parRepas}<p class="muet" style="font-size:.85rem">Touche un aliment pour modifier sa quantité, ses calories ou son repas.</p>` : '<p class="muet">Rien de noté. Prends ton prochain repas en photo.</p>'}</div>
       <div class="plaque"><h2>7 derniers jours</h2>
         <svg viewBox="0 0 320 112" width="100%" role="img" aria-label="Calories des 7 derniers jours">
           <line x1="0" x2="320" y1="${yK(b.cible)}" y2="${yK(b.cible)}" stroke="var(--gris)" stroke-dasharray="3 4"/>${barres}</svg>
@@ -456,6 +468,7 @@ const ecrans = {
       <div class="plaque"><h2>Pesée</h2>
         ${derniere ? `<p><span class="grand-chiffre">${derniere.kg}<small> kg</small></span> ${avant ? `<span class="num" style="color:${derniere.kg <= avant.kg ? 'var(--vert)' : 'var(--rouge)'}">${derniere.kg > avant.kg ? '+' : ''}${(derniere.kg - avant.kg).toFixed(1)} kg</span>` : ''}</p>` : ''}
         <div class="rangee-btn"><input type="number" inputmode="decimal" step="0.1" min="30" max="250" id="pesee" placeholder="Poids du jour (kg)" value="${esc(ui.pesee ?? '')}"><button class="btn petit" data-a="peser">Noter</button></div>
+        ${pesees.length ? `<div class="liste">${pesees.slice(-5).reverse().map(x => `<div class="item"><span class="corps-item">${new Date(x.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</span><span class="dosage">${x.kg} kg</span><button class="rond mini" data-a="supprimerPesee" data-v="${x.date}" aria-label="Supprimer la pesée">×</button></div>`).join('')}</div>` : ''}
         <p class="muet" style="font-size:.85rem">Pèse-toi le matin, une à deux fois par semaine. Toutes les deux semaines, Veilleur compare ta courbe à ton objectif et corrige tes calories.${S.nutri.ajustement ? ` Correction actuelle : ${S.nutri.ajustement > 0 ? '+' : ''}${S.nutri.ajustement} kcal.` : ''}</p></div>
     </div>`;
   },
@@ -541,6 +554,77 @@ const ecrans = {
     </div>`;
   },
 
+  bibliotheque() {
+    const pourSeance = ui.biblioPour === 'seance';
+    const permises = new Set(C.chainesPermises(S.profil, S.etat).map(c => c.id));
+    const deja = new Set((S.seance?.exercices || []).map(e => e.chaine));
+    const groupes = Object.entries(C.NOMS_MOTIFS).map(([motif, nom]) => {
+      const liste = C.CHAINES.filter(c => c.motif === motif && (!pourSeance || permises.has(c.id)));
+      if (!liste.length) return '';
+      return `<div class="plaque"><h2>${nom}</h2>${liste.map(c => {
+        const st = S.etat.chaines[c.id] || { rang: 0 };
+        const pr = C.etapeProgression(S.etat, c.id);
+        const indispo = !permises.has(c.id);
+        return `<div class="exo biblio">
+          <div class="item"><div class="corps-item"><h3>${esc(c.variantes[st.rang] || c.variantes[0])}</h3>
+            <div class="tags"><span class="tag">${esc(C.MUSCLES[c.id] || '')}</span>${c.materiel ? `<span class="tag">${esc(C.MATERIELS[c.materiel])}</span>` : '<span class="tag">Sans matériel</span>'}${indispo ? '<span class="tag">Non proposé</span>' : ''}</div></div>
+            ${pourSeance ? (deja.has(c.id) ? '<span class="pastille">Déjà prévu</span>' : `<button class="btn petit" data-a="ajouterExo" data-v="${c.id}">Ajouter</button>`) : ''}</div>
+          ${explication('Détails', `<p>${esc(c.consigne)}</p>
+            ${c.mode === 'charge' ? `<p>Progression par la charge : +${c.pasKg} kg quand tu dépasses 12 répétitions. ${st.charge ? `Charge actuelle : ${st.charge} kg.` : 'Charge à trouver lors de ta première séance.'}</p>`
+              : `<p><strong>Les ${c.variantes.length} niveaux</strong> :</p><ol class="niveaux">${c.variantes.map((v, k) => `<li class="${k === st.rang ? 'actuel' : k < st.rang ? 'fait' : ''}">${esc(v)}${k === st.rang ? ' · ton niveau' : ''}</li>`).join('')}</ol><p>${esc(pr.reste)}.</p>`}
+            ${indispo ? `<p>Pas proposé pour toi : ${c.materiel && !(S.profil.materiel || []).includes(c.materiel) ? `demande ${esc(C.MATERIELS[c.materiel].toLowerCase())}` : 'zone à ménager ou exercice écarté'}.</p>` : ''}`)}
+        </div>`;
+      }).join('')}</div>`;
+    }).join('');
+    return `<div class="ecran">
+      <div><div class="etiquette">${pourSeance ? 'Ajouter à la séance' : 'Tous les exercices'}</div><h1>Bibliothèque</h1>
+        <p class="muet">${pourSeance ? 'Seuls les exercices compatibles avec ton matériel et tes zones à ménager sont listés.' : `${C.CHAINES.length} progressions, ${C.CHAINES.reduce((a, c) => a + c.variantes.length, 0)} exercices au total.`}</p></div>
+      ${groupes}
+      <button class="btn second" data-a="aller" data-v="${pourSeance ? 'apercu' : 'progres'}">Retour</button>
+    </div>`;
+  },
+
+  edition() {
+    const e = ui.edition;
+    return `<div class="ecran">
+      <div><div class="etiquette">Modifier</div><h1>${esc(e.nom)}</h1></div>
+      <div class="plaque">
+        <label class="champ"><span class="etiquette">Nom</span><input type="text" id="edNom" value="${esc(e.nom)}" maxlength="60"></label>
+        ${e.grammes ? `<div class="reglage-ligne"><span>Quantité</span><div class="quantite">
+          <button class="rond mini" data-a="edGrammes" data-v="-1" aria-label="Moins">−</button><span class="num">${e.grammes} g</span>
+          <button class="rond mini" data-a="edGrammes" data-v="1" aria-label="Plus">+</button></div></div>
+          <p class="muet" style="font-size:.85rem">Les calories et macros suivent la quantité.</p>` : ''}
+        <div class="trio">
+          <label class="champ"><span class="etiquette">Calories</span><input type="number" inputmode="numeric" id="edKcal" value="${e.kcal}"></label>
+          <label class="champ"><span class="etiquette">Protéines (g)</span><input type="number" inputmode="decimal" id="edP" value="${e.p}"></label>
+          <label class="champ"><span class="etiquette">Glucides (g)</span><input type="number" inputmode="decimal" id="edG" value="${e.g}"></label>
+        </div>
+        <label class="champ"><span class="etiquette">Lipides (g)</span><input type="number" inputmode="decimal" id="edL" value="${e.l}"></label>
+        <div class="champ"><span class="etiquette">Repas</span><div class="puces">${Object.entries(N.REPAS).map(([k, v]) => `<button class="puce" aria-pressed="${e.repas === k}" data-a="edRepas" data-v="${k}">${v}</button>`).join('')}</div></div>
+      </div>
+      <button class="btn" data-a="edEnregistrer">Enregistrer</button>
+      <button class="btn second" data-a="supprimerEntree" data-v="${e.id}">Supprimer</button>
+      <button class="btn second" data-a="aller" data-v="calories">Annuler</button>
+    </div>`;
+  },
+
+  objectifs() {
+    const o = N.objectifJour(S.profil, { ...S.nutri, perso: null });
+    const perso = S.nutri.perso || {};
+    return `<div class="ecran">
+      <div><div class="etiquette">Calories</div><h1>Mes objectifs</h1>
+        <p class="muet">Veilleur calcule ${o.kcal} kcal et ${o.p} g de protéines par jour. Tu peux mettre tes propres valeurs, par exemple celles d’un diététicien.</p></div>
+      <div class="plaque">
+        <label class="champ"><span class="etiquette">Calories par jour</span><input type="number" inputmode="numeric" id="persoKcal" placeholder="${o.kcal} (calcul automatique)" value="${esc(perso.kcal ?? '')}"></label>
+        <label class="champ"><span class="etiquette">Protéines par jour (g)</span><input type="number" inputmode="numeric" id="persoP" placeholder="${o.p} (calcul automatique)" value="${esc(perso.p ?? '')}"></label>
+        <p class="muet" style="font-size:.88rem">Laisse vide pour garder le calcul automatique. Les glucides et lipides s’ajustent sur le reste. Les calories du sport s’ajoutent toujours.</p>
+      </div>
+      <button class="btn" data-a="enregistrerObjectifs">Enregistrer</button>
+      ${S.nutri.perso ? '<button class="btn second" data-a="objectifsAuto">Revenir au calcul automatique</button>' : ''}
+      <button class="btn second" data-a="aller" data-v="calories">Annuler</button>
+    </div>`;
+  },
+
   reglages() {
     const p = S.profil;
     const conf = ui.confirmer === 'reset' ? `<div class="plaque" style="border-color:var(--rouge)"><p>Tout effacer ? Ton profil, tes niveaux et ton journal seront supprimés de ce téléphone.</p>
@@ -587,6 +671,19 @@ function carteComplements(compact) {
       <span class="pastille ${c.statut === 'pris' ? 'haute' : c.statut === 'maintenant' ? 'moyenne' : ''}">${libelle[c.statut]}</span></div>`).join('')}</div></div>`;
 }
 
+function reglageExo(i, champ, label, valeur) {
+  return `<div class="reglage-ligne"><span>${label}</span><div class="quantite">
+    <button class="rond mini" data-a="modExo" data-v="${i}" data-c="${champ}:-1" aria-label="${label} moins">−</button>
+    <span class="num">${valeur}</span>
+    <button class="rond mini" data-a="modExo" data-v="${i}" data-c="${champ}:1" aria-label="${label} plus">+</button></div></div>`;
+}
+
+function lireEdition() {
+  const v = id => document.getElementById(id)?.value;
+  if (!document.getElementById('edNom')) return;
+  const n = x => Math.max(0, Math.round(Number(String(x).replace(',', '.')) * 10) / 10) || 0;
+  Object.assign(ui.edition, { nom: v('edNom').slice(0, 60), kcal: Math.round(n(v('edKcal'))), p: n(v('edP')), g: n(v('edG')), l: n(v('edL')) });
+}
 function puceRepas() {
   return `<div class="puces">${Object.entries(N.REPAS).map(([k, v]) => `<button class="puce" aria-pressed="${ui.repas === k}" data-a="choisirRepas" data-v="${k}">${v}</button>`).join('')}</div>`;
 }
@@ -611,16 +708,19 @@ function entete() {
 }
 
 function nav() {
-  if (!S.profil || ['formulaire', 'seance', 'bilan', 'apercu', 'analyse', 'ajout', 'complements'].includes(ui.ecran)) return '';
+  if (!S.profil || ['formulaire', 'seance', 'bilan', 'apercu', 'analyse', 'ajout', 'complements', 'bibliotheque', 'edition', 'objectifs'].includes(ui.ecran)) return '';
   const o = (id, ecran, label) => `<button class="onglet" data-a="aller" data-v="${ecran}" ${ui.ecran === ecran ? 'aria-current="page"' : ''}>${ICONES[id]}${label}</button>`;
   return `<nav class="bas"><div class="interieur">${o('ce_soir', 'accueil', 'Ce soir')}${o('calories', 'calories', 'Calories')}${o('progres', 'progres', 'Progrès')}${o('profil', 'reglages', 'Profil')}</div></nav>`;
 }
 
 function render() {
+  const ouverts = app.dataset.ecran === ui.ecran ? [...app.querySelectorAll('details.explication')].map(d => d.open) : [];
   if ((ui.ecran === 'seance' || (ui.ecran === 'bilan' && !ui.resultat)) && !S.run) ui.ecran = S.profil ? 'accueil' : 'intro';
   if (ui.ecran === 'seance' && S.run.etape >= etapes(S.run.seance).length) ui.ecran = 'bilan';
   app.innerHTML = ecrans[ui.ecran]() + nav() + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : '');
   if (S.run?.chrono) minuteur();
+  app.dataset.ecran = ui.ecran;
+  if (ouverts.length) app.querySelectorAll('details.explication').forEach((d, i) => { if (ouverts[i]) d.open = true; });
 }
 function aller(ecran) { if (ecran === 'complements' && ui.ecran !== 'complements') ui.retourComplements = ['accueil', 'calories', 'reglages'].includes(ui.ecran) ? ui.ecran : 'calories'; ui.ecran = ecran; ui.confirmer = null; render(); window.scrollTo(0, 0); }
 function toast(t) { ui.toast = t; render(); setTimeout(() => { ui.toast = ''; render(); }, 2200); }
@@ -737,7 +837,7 @@ const actions = {
     if (ui.analyse?.resultat) { ui.analyse.resultat.aliments.push({ ...e, grammes: 0 }); aller('analyse'); return; }
     noter([e], 'manuel'); aller('calories'); toast(`${e.kcal} kcal ajoutées`);
   },
-  supprimerEntree(v) { S.nutri.journal = S.nutri.journal.filter(e => e.id !== v); sauver(); render(); },
+  supprimerEntree(v) { S.nutri.journal = S.nutri.journal.filter(e => e.id !== v); sauver(); if (ui.ecran === 'edition') { aller('calories'); toast('Supprimé'); } else render(); },
   async photo(fichier) {
     ui.analyse?.ctl?.abort();
     ui.repas = N.repasSelonHeure();
@@ -794,6 +894,52 @@ const actions = {
   activerComplement(v) { const c = S.complements.liste.find(x => x.id === v); if (c) { c.actif = !c.actif; sauver(); render(); reprogrammerRappels(); } },
   supprimerComplement(v) { S.complements.liste = S.complements.liste.filter(x => x.id !== v); sauver(); render(); reprogrammerRappels(); },
   async autoriserNotifs() { ui.permNotifs = await permissionNotifs(true); await reprogrammerRappels(); render(); if (ui.permNotifs !== 'granted') toast('Active les notifications de Veilleur dans les réglages du téléphone'); },
+  modExo(v, c) {
+    const [champ, sens] = c.split(':'); const d = Number(sens);
+    const e = S.seance.exercices[Number(v)];
+    if (champ === 'series') e.series = Math.min(8, Math.max(1, e.series + d));
+    if (champ === 'cible') { const pas = e.mode === 'temps' ? (e.cible >= 60 ? 15 : 5) : 1; e.cible = Math.min(e.mode === 'temps' ? 900 : 50, Math.max(e.mode === 'temps' ? 10 : 1, e.cible + d * pas)); }
+    if (champ === 'repos') e.repos = Math.min(300, Math.max(0, e.repos + d * 15));
+    if (champ === 'charge') e.charge = e.charge ? Math.max(e.pasKg, Math.round((e.charge + d * e.pasKg) * 10) / 10) : 10;
+    ui.ouvert = Number(v); sauver(); render();
+  },
+  retirerExo(v) {
+    if (S.seance.exercices.length <= 1) { toast('Garde au moins un exercice'); return; }
+    S.seance.exercices.splice(Number(v), 1); sauver(); render();
+  },
+  ouvrirBiblio(v) { ui.biblioPour = v; aller('bibliotheque'); },
+  ajouterExo(v) {
+    const ref = S.seance.exercices.find(e => e.chaine) || { series: 3, repos: 60 };
+    const l = C.ligneExercice(v, S.etat, ref.series, ref.repos);
+    if (l) { S.seance.exercices.push(l); sauver(); aller('apercu'); toast(`${l.nom} ajouté à la séance`); }
+  },
+  editerEntree(v) { const e = S.nutri.journal.find(x => x.id === v); if (e) { ui.edition = { ...e }; aller('edition'); } },
+  edGrammes(v) {
+    const e = ui.edition, pas = e.grammes >= 100 ? 25 : 10;
+    lireEdition(); Object.assign(ui.edition, N.regrammer(ui.edition, Math.max(pas, e.grammes + Number(v) * pas))); render();
+  },
+  edRepas(v) { lireEdition(); ui.edition.repas = v; render(); },
+  edEnregistrer() {
+    lireEdition();
+    const e = ui.edition;
+    if (!e.nom.trim() || !(e.kcal >= 0 && e.kcal < 5000)) { toast('Vérifie le nom et les calories'); return; }
+    S.nutri.journal = S.nutri.journal.map(x => (x.id === e.id ? { ...e, nom: e.nom.trim() } : x));
+    sauver(); aller('calories'); toast('Modifié');
+  },
+  enregistrerObjectifs() {
+    const kcal = Number(document.getElementById('persoKcal')?.value) || null;
+    const p = Number(document.getElementById('persoP')?.value) || null;
+    if (kcal !== null && (kcal < 800 || kcal > 6000)) { toast('Choisis entre 800 et 6000 kcal'); return; }
+    if (p !== null && (p < 20 || p > 400)) { toast('Choisis entre 20 et 400 g de protéines'); return; }
+    S.nutri.perso = kcal || p ? { kcal, p } : null; sauver(); aller('calories'); toast(S.nutri.perso ? 'Objectifs enregistrés' : 'Calcul automatique');
+  },
+  objectifsAuto() { S.nutri.perso = null; sauver(); aller('calories'); toast('Calcul automatique rétabli'); },
+  supprimerPesee(v) { S.nutri.pesees = S.nutri.pesees.filter(x => x.date !== v); sauver(); render(); },
+  supprimerSeanceHisto(v) {
+    const i = Number(v);
+    if (ui.confirmer !== `histo${i}`) { ui.confirmer = `histo${i}`; toast('Touche encore × pour supprimer cette séance du journal'); return; }
+    S.etat.historique.splice(i, 1); ui.confirmer = null; sauver(); render(); toast('Séance retirée du journal');
+  },
   pardonner() { S.etat.nonAime = {}; sauver(); toast('Tous les exercices sont de retour'); },
   demanderReset() { ui.confirmer = 'reset'; render(); },
   reset() { try { localStorage.removeItem(CLE); } catch { /* rien */ } S = { profil: null, etat: null, nutri: { journal: [], pesees: [], ajustement: 0, cleApi: '' }, complements: { liste: [], pris: {} } }; majMoteur(); reprogrammerRappels(); ui.confirmer = null; aller('intro'); },
