@@ -59,6 +59,10 @@ jobs:
             bot-stages/resultats/entreprises_stage.md
             bot-stages/resultats/entreprises.json
 
+      # Boost Étudiant (aides étudiantes) publié dans le même site, sous /aides/
+      - name: Ajouter Boost Étudiant
+        run: cp -r aides-etudiants/www bot-stages/app/aides
+
       - name: Préparer l'appli
         if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         uses: actions/upload-pages-artifact@v3

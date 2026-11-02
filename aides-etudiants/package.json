@@ -1,0 +1,24 @@
+{
+  "name": "boost-etudiant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Toutes les aides pour les étudiants : manger, se loger, se soigner, bouger.",
+  "scripts": {
+    "dev": "npx --yes serve www -l 8080",
+    "check": "node scripts/verifier.js",
+    "test": "node scripts/verifier.js && node tests/ui.test.js",
+    "liens": "node scripts/liens.js",
+    "captures": "node scripts/captures.js",
+    "assets": "capacitor-assets generate --iconBackgroundColor '#120b2e' --splashBackgroundColor '#120b2e'",
+    "sync": "cap sync"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.0"
+  }
+}

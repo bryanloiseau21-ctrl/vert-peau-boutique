@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Boost Étudiant</title>
+  <meta name="description" content="Toutes les aides pour les étudiants : manger, se loger, se soigner, bouger.">
+  <meta name="theme-color" content="#120b2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Boost Étudiant">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="blob b1"></div><div class="blob b2"></div>
+
+  <header class="top">
+    <p class="hello" id="hello">Salut 👋</p>
+    <h1 id="titre">Booste ton <span class="grad">budget</span> ⚡</h1>
+  </header>
+
+  <main>
+    <!-- ── Explorer ── -->
+    <section id="vue-explorer" class="vue active">
+      <div class="stats" id="stats"></div>
+      <label class="recherche">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="APL, mutuelle, resto U…" autocomplete="off">
+      </label>
+      <nav class="cats" id="cats" aria-label="Catégories"></nav>
+      <div class="liste" id="liste"></div>
+    </section>
+
+    <!-- ── Pour moi ── -->
+    <section id="vue-moi" class="vue">
+      <div class="carte-profil">
+        <h2>Ton profil</h2>
+        <p class="muted">Coche ce qui te correspond, on te montre les aides qui matchent. Rien ne quitte ton téléphone 🔒</p>
+        <div class="toggles" id="toggles"></div>
+      </div>
+      <h3 class="section-titre" id="moi-titre"></h3>
+      <div class="liste" id="liste-moi"></div>
+    </section>
+
+    <!-- ── Favoris ── -->
+    <section id="vue-favoris" class="vue">
+      <div class="liste" id="liste-fav"></div>
+    </section>
+
+    <!-- ── Infos ── -->
+    <section id="vue-infos" class="vue">
+      <div class="carte-info" id="install-box">
+        <h2>📲 Installer l'appli</h2>
+        <button class="btn" id="btn-install" hidden>Installer maintenant</button>
+        <div id="install-ios">
+          <p><b>iPhone (Safari)</b> : touche <span class="kbd">Partager ⬆️</span> puis <span class="kbd">Sur l'écran d'accueil</span>.</p>
+        </div>
+        <div id="install-android">
+          <p><b>Android (Chrome)</b> : menu <span class="kbd">⋮</span> puis <span class="kbd">Installer l'application</span>.</p>
+        </div>
+      </div>
+      <div class="carte-info">
+        <h2>🧭 Les bons réflexes</h2>
+        <ul class="reflexes">
+          <li><b>Remplis ton DSE</b> entre mars et mai, même si tu n'es pas sûr·e d'être boursier·e.</li>
+          <li><b>Simule tout</b> sur caf.fr et mesdroitssociaux.gouv.fr : c'est gratuit et rapide.</li>
+          <li><b>L'assistant·e social·e du CROUS</b> est là pour toi, boursier ou non. N'hésite pas !</li>
+          <li><b>Les aides se cumulent</b> souvent (bourse + APL + repas à 1 €…).</li>
+        </ul>
+      </div>
+      <div class="carte-info">
+        <h2>☎️ Numéros utiles</h2>
+        <a class="tel" href="tel:3040">Aide étudiante (moral, argent, logement, droits) <b>3040</b></a>
+        <a class="tel" href="tel:3114">Prévention suicide 24h/24 <b>3114</b></a>
+        <a class="tel" href="tel:0800235236">Fil Santé Jeunes <b>0 800 235 236</b></a>
+      </div>
+      <p class="mention">Infos vérifiées en <span id="maj"></span>. Les montants changent chaque année : le site officiel de chaque aide fait toujours foi.<br>Appli indépendante, non affiliée au CROUS, à la CAF ou à l'État.<br><a class="lien-discret" href="confidentialite.html">Confidentialité : aucune donnée collectée</a></p>
+    </section>
+  </main>
+
+  <!-- Fiche détail -->
+  <div class="voile" id="voile" hidden></div>
+  <article class="sheet" id="sheet" aria-modal="true" role="dialog" hidden></article>
+
+  <!-- Barre d'onglets -->
+  <nav class="tabbar" aria-label="Navigation">
+    <button class="tab active" data-vue="explorer"><span>🔍</span>Explorer</button>
+    <button class="tab" data-vue="moi"><span>🎯</span>Pour moi</button>
+    <button class="tab" data-vue="favoris"><span>💜</span>Favoris<i class="badge" id="badge-fav" hidden></i></button>
+    <button class="tab" data-vue="infos"><span>💡</span>Infos</button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

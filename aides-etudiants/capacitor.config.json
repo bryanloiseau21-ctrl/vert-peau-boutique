@@ -1,0 +1,8 @@
+{
+  "appId": "fr.boostetudiant.app",
+  "appName": "Boost Étudiant",
+  "webDir": "www",
+  "backgroundColor": "#120b2e",
+  "ios": { "contentInset": "never", "scheme": "App" },
+  "android": { "backgroundColor": "#120b2e" }
+}

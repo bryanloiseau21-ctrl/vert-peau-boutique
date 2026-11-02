@@ -1,0 +1,36 @@
+# Vérifie Boost Étudiant à chaque modification : données valides + parcours complet dans un vrai navigateur.
+name: Boost Étudiant – tests
+
+on:
+  push:
+    paths: ["aides-etudiants/**", ".github/workflows/boost-*.yml"]
+  pull_request:
+    paths: ["aides-etudiants/**", ".github/workflows/boost-*.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: aides-etudiants
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: aides-etudiants/package-lock.json
+      - run: npm ci
+      - name: Données des aides
+        run: npm run check
+      - name: Navigateur de test
+        run: npm install --no-save playwright@1 && npx playwright install --with-deps chromium
+      - name: Parcours complet (iPhone)
+        run: node tests/ui.test.js
