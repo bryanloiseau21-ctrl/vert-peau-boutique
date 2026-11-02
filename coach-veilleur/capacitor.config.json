@@ -2,7 +2,7 @@
   "appId": "fr.veilleur.coach",
   "appName": "Veilleur",
   "webDir": "www",
-  "backgroundColor": "#07090c",
+  "backgroundColor": "#050607",
   "ios": { "contentInset": "never", "scheme": "App" },
-  "android": { "backgroundColor": "#07090c" }
+  "android": { "backgroundColor": "#050607" }
 }

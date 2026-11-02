@@ -36,7 +36,7 @@ try {
   await clic('[data-c="zones"][data-v="genoux"]');
   await clic('[data-c="ton"][data-v="cash"]');
   await clic('text=Activer mon coach');
-  await page.waitForSelector('text=État du jour');
+  await page.waitForSelector('text=Comment tu te sens ?');
   assert.match(await page.textContent('.voix'), /Jordan/);
 
   await clic('[data-c="energie"][data-v="5"]');
@@ -71,9 +71,9 @@ try {
   assert.ok(await page.locator('.chgt').count() > 0, 'le coach annonce ses ajustements');
 
   await clic('text=Retour au QG');
-  assert.match(await page.textContent('.grand-chiffre'), /^1/);
+  assert.match(await page.textContent('.scores'), /1\/3/);
   await page.reload();
-  await page.waitForSelector('text=État du jour');
+  await page.waitForSelector('text=Comment tu te sens ?');
   await clic('[data-v="progres"]');
   await page.waitForSelector('text=Tes progressions');
   assert.equal(await page.locator('.niveau').count() > 0, true);
@@ -86,7 +86,37 @@ try {
   await clic('[data-a="reset"]');
   await page.waitForSelector('text=Essayer avec un profil exemple');
   await clic('text=Essayer avec un profil exemple');
-  await page.waitForSelector('text=État du jour');
+  await page.waitForSelector('text=Comment tu te sens ?');
+
+  // Calories : profil exemple complet, ajout manuel, analyse photo simulée.
+  await clic('.onglet[data-v="calories"]');
+  await page.waitForSelector('text=KCAL RESTANTES');
+  await clic('text=Ajouter à la main');
+  await page.fill('#recherche', 'banane');
+  await clic('[data-a="choisirAliment"]');
+  await clic('[data-a="grammesChoix"][data-v="10"]');
+  await clic('[data-a="ajouterChoix"]');
+  await page.waitForSelector('text=Banane');
+  // Faux moteur d'analyse : la page croit tourner dans claude.ai.
+  await page.addInitScript(() => {
+    window.claude = { use: async () => ({
+      json: async () => ({ aliments: [{ nom: 'Pâtes bolognaise', grammes: 300, kcal: 450, proteines: 20, glucides: 60, lipides: 12 }], confiance: 'moyenne', remarque: 'Sauce estimée.' }),
+      limits: async () => ({ images: { maxCount: 1 } }),
+    }) };
+  });
+  await page.reload();
+  await clic('.onglet[data-v="calories"]');
+  await page.waitForSelector('text=KCAL RESTANTES');
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await page.setInputFiles('#galerie', { name: 'repas.png', mimeType: 'image/png', buffer: png });
+  await page.waitForSelector('text=Voilà ce que je vois');
+  await clic('[data-a="grammes"][data-c="-1"]');
+  assert.match(await page.textContent('.liste'), /275 g/);
+  await clic('text=Ajouter au journal');
+  await page.waitForSelector('text=Pâtes bolognaise');
+  await page.fill('#pesee', '75.8');
+  await clic('[data-a="peser"]');
+  await page.waitForSelector('.grand-chiffre:has-text("75.8")');
 
   assert.deepEqual(erreurs, []);
   console.log('Parcours complet OK');

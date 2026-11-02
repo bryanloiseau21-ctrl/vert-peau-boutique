@@ -66,5 +66,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Veilleur utilise l’appareil photo pour photographier tes repas et calculer leurs calories.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Veilleur ouvre tes photos pour calculer les calories d’un repas déjà photographié.</string>
 </dict>
 </plist>

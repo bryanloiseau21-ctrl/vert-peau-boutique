@@ -34,6 +34,8 @@ jobs:
         run: npm run test:logique
       - name: Parcours complet (iPhone)
         run: npm install --no-save playwright@1 && npx playwright install --with-deps chromium && node tests/ui.test.js
+      - name: SDK Claude intégré à jour
+        run: npm run anthropic && git diff --exit-code -- www/vendor
 
       - uses: actions/setup-java@v4
         with:

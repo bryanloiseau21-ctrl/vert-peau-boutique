@@ -100,3 +100,24 @@ test('le ton change le message', () => {
   const b = C.messageCoach({ ...profil, ton: 'cash' }, etat, null, '2026-11-02');
   assert.notEqual(a, b);
 });
+
+test('salle de sport : machines proposées en priorité, progression par la charge', () => {
+  const p = { ...profil, materiel: ['salle'] };
+  const etat = C.etatInitial(p);
+  const s = C.genererSeance(p, etat, enForme, '2026-11-02');
+  assert.ok(s.exercices.every(e => C.chaine(e.chaine).materiel === 'salle'), 'que des machines');
+  const i = s.exercices.findIndex(e => e.mode === 'charge');
+  const ex = s.exercices[i];
+  assert.equal(ex.charge, null, 'première fois : charge à trouver');
+  // Première séance : 40 kg notés, séries réussies et faciles.
+  const res = s.exercices.map(e => Array(e.series).fill(e.cible + 1));
+  const charges = s.exercices.map((e, j) => (j === i ? 40 : null));
+  let { etat: e2 } = C.appliquerResultat(p, etat, s, res, 1, '2026-11-02', 30, charges);
+  assert.equal(e2.chaines[ex.chaine].charge, 40);
+  // Au-delà de 12 répétitions, la charge monte et les répétitions repartent à 8.
+  e2.chaines[ex.chaine].cible = 12;
+  const s2 = { ...s, exercices: [{ ...ex, cible: 12, series: 3 }] };
+  ({ etat: e2 } = C.appliquerResultat(p, e2, s2, [[13, 13, 13]], 1, '2026-11-04', 30, [40]));
+  assert.equal(e2.chaines[ex.chaine].charge, 40 + C.chaine(ex.chaine).pasKg);
+  assert.equal(e2.chaines[ex.chaine].cible, 8);
+});

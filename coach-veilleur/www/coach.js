@@ -9,12 +9,40 @@ export const OBJECTIFS = {
 };
 
 export const NIVEAUX = { debutant: 'Débutant', intermediaire: 'Intermédiaire', avance: 'Avancé' };
-export const MATERIELS = { halteres: 'Haltères', elastique: 'Élastique', traction: 'Barre de traction' };
+export const MATERIELS = { salle: 'Salle de sport (machines)', halteres: 'Haltères', elastique: 'Élastique', traction: 'Barre de traction' };
 export const ZONES = { genoux: 'Genoux', dos: 'Dos', epaules: 'Épaules', poignets: 'Poignets' };
 export const TONS = { doux: 'Bienveillant', motivant: 'Motivant', cash: 'Sans filtre' };
 
 // Chaque chaîne est une progression : on monte d'une variante quand la cible dépasse le plafond.
 export const CHAINES = [
+  // Salle de sport : machines guidées, câbles et cardio. Progression par la charge (kg).
+  { id: 'chest-press', motif: 'pousser', mode: 'charge', materiel: 'salle', evite: ['epaules'], pasKg: 2.5,
+    variantes: ['Chest press (développé machine)'], consigne: 'Dos collé au dossier, poignées à hauteur de poitrine. Pousse sans verrouiller les coudes.' },
+  { id: 'pec-deck', motif: 'pousser', mode: 'charge', materiel: 'salle', evite: ['epaules'], pasKg: 2.5,
+    variantes: ['Pec deck (écarté machine)'], consigne: 'Coudes légèrement fléchis, ramène les bras devant toi en serrant les pectoraux.' },
+  { id: 'shoulder-press', motif: 'pousser', mode: 'charge', materiel: 'salle', evite: ['epaules'], pasKg: 2.5,
+    variantes: ['Shoulder press (développé épaules machine)'], consigne: 'Assis bien droit, pousse au-dessus de la tête sans cambrer.' },
+  { id: 'triceps-poulie', motif: 'pousser', mode: 'charge', materiel: 'salle', evite: [], pasKg: 2.5,
+    variantes: ['Extension triceps à la poulie haute'], consigne: 'Coudes collés au corps, seuls les avant-bras bougent.' },
+  { id: 'tirage-vertical', motif: 'tirer', mode: 'charge', materiel: 'salle', evite: [], pasKg: 2.5,
+    variantes: ['Tirage vertical (lat pulldown)'], consigne: 'Tire la barre vers le haut de la poitrine, poitrine sortie, sans balancer.' },
+  { id: 'tirage-horizontal', motif: 'tirer', mode: 'charge', materiel: 'salle', evite: [], pasKg: 2.5,
+    variantes: ['Tirage horizontal assis (seated row)'], consigne: 'Dos droit, tire les coudes vers l’arrière et serre les omoplates.' },
+  { id: 'curl-poulie', motif: 'tirer', mode: 'charge', materiel: 'salle', evite: [], pasKg: 2.5,
+    variantes: ['Curl biceps à la poulie basse'], consigne: 'Coudes fixes le long du corps, redescends lentement.' },
+  { id: 'presse', motif: 'jambes', mode: 'charge', materiel: 'salle', evite: [], pasKg: 5,
+    variantes: ['Presse à cuisses (leg press)'], consigne: 'Pieds à largeur d’épaules, descends jusqu’à 90° aux genoux, bas du dos collé au dossier.' },
+  { id: 'leg-curl', motif: 'jambes', mode: 'charge', materiel: 'salle', evite: [], pasKg: 2.5,
+    variantes: ['Leg curl (ischios machine)'], consigne: 'Ramène les talons vers les fesses, contrôle le retour.' },
+  { id: 'leg-extension', motif: 'jambes', mode: 'charge', materiel: 'salle', evite: ['genoux'], pasKg: 2.5,
+    variantes: ['Leg extension (quadriceps machine)'], consigne: 'Tends les jambes sans à-coup, marque une pause en haut.' },
+  { id: 'abducteurs', motif: 'jambes', mode: 'charge', materiel: 'salle', evite: [], pasKg: 2.5,
+    variantes: ['Machine abducteurs (fessiers)'], consigne: 'Ouvre les genoux en poussant avec l’extérieur des cuisses, buste droit.' },
+  { id: 'crunch-machine', motif: 'gainage', mode: 'charge', materiel: 'salle', evite: ['dos'], pasKg: 2.5,
+    variantes: ['Crunch abdominal machine'], consigne: 'Enroule le buste en expirant, ne tire pas avec les bras.' },
+  { id: 'cardio-machine', motif: 'cardio', mode: 'temps', materiel: 'salle', evite: [], bornes: { min: 60, max: 300, pas: 30, depart: 120 },
+    variantes: ['Vélo à intervalles', 'Elliptique rythme soutenu', 'Rameur', 'Tapis incliné en marche rapide', 'Escalier (stair climber)'],
+    consigne: 'Allure soutenue : tu peux dire quelques mots, pas une phrase entière.' },
   { id: 'pompes', motif: 'pousser', mode: 'reps', materiel: null, evite: ['poignets'],
     variantes: ['Pompes contre un mur', 'Pompes mains sur une chaise', 'Pompes sur les genoux', 'Pompes', 'Pompes pieds surélevés', 'Pompes diamant'],
     consigne: 'Corps gainé en planche, coudes à 45°, la poitrine descend jusqu’à frôler l’appui.' },
@@ -78,7 +106,8 @@ export const MOBILITE = [
   { nom: 'Ouverture thoracique au sol', duree: 40 },
 ];
 
-const BORNES = { reps: { min: 5, max: 15, pas: 1, depart: 8 }, temps: { min: 15, max: 60, pas: 5, depart: 25 } };
+const BORNES = { reps: { min: 5, max: 15, pas: 1, depart: 8 }, temps: { min: 15, max: 60, pas: 5, depart: 25 }, charge: { min: 6, max: 12, pas: 1, depart: 8 } };
+const bornesDe = c => c.bornes || BORNES[c.mode];
 const DEPART = { debutant: { part: 0, reps: 8, temps: 20 }, intermediaire: { part: 0.4, reps: 10, temps: 30 }, avance: { part: 0.7, reps: 12, temps: 40 } };
 
 export const RESSENTIS = ['Trop facile', 'Facile', 'Parfait', 'Dur', 'Trop dur'];
@@ -116,7 +145,9 @@ export function etatInitial(profil) {
   const d = DEPART[profil.niveau] || DEPART.debutant;
   const chaines = {};
   for (const c of CHAINES) {
-    chaines[c.id] = { rang: Math.floor((c.variantes.length - 1) * d.part), cible: c.mode === 'reps' ? d.reps : d.temps };
+    chaines[c.id] = c.mode === 'charge' ? { rang: 0, cible: 10, charge: null }
+      : c.bornes ? { rang: Math.floor((c.variantes.length - 1) * d.part), cible: c.bornes.depart }
+      : { rang: Math.floor((c.variantes.length - 1) * d.part), cible: c.mode === 'reps' ? d.reps : d.temps };
   }
   return { chaines, charge: 1, historique: [], nonAime: {}, usage: {}, records: 0 };
 }
@@ -147,16 +178,20 @@ function choisirChaine(motif, permises, etat, deja) {
   const candidates = permises.filter(c => c.motif === motif && !deja.has(c.id));
   if (!candidates.length) return null;
   // La chaîne la moins utilisée récemment passe en premier : variété sans hasard.
-  return candidates.sort((a, b) => (etat.usage[a.id] || 0) - (etat.usage[b.id] || 0) || CHAINES.indexOf(a) - CHAINES.indexOf(b))[0];
+  // Avec du matériel, on l'utilise en priorité ; à égalité, la moins utilisée récemment.
+  return candidates.sort((a, b) => (a.materiel ? 0 : 1) - (b.materiel ? 0 : 1) || (etat.usage[a.id] || 0) - (etat.usage[b.id] || 0) || CHAINES.indexOf(a) - CHAINES.indexOf(b))[0];
 }
 
 function ligne(c, etat, intensite, series, repos) {
-  const st = etat.chaines[c.id];
-  const b = BORNES[c.mode];
-  const cible = c.mode === 'reps'
-    ? Math.max(3, Math.round(st.cible * intensite))
-    : Math.max(10, Math.round(st.cible * intensite / 5) * 5);
-  return { chaine: c.id, nom: c.variantes[st.rang], mode: c.mode, cible, series, repos, consigne: c.consigne, motif: c.motif, base: st.cible, bornes: b };
+  const st = etat.chaines[c.id] || { rang: 0, cible: bornesDe(c).depart, charge: null };
+  const b = bornesDe(c);
+  const cible = c.mode === 'temps'
+    ? Math.max(10, Math.round(st.cible * intensite / b.pas) * b.pas)
+    : c.mode === 'charge' ? Math.min(15, Math.max(5, Math.round(st.cible * intensite)))
+    : Math.max(3, Math.round(st.cible * intensite));
+  const l = { chaine: c.id, nom: c.variantes[st.rang], mode: c.mode, cible, series, repos, consigne: c.consigne, motif: c.motif, base: st.cible, bornes: b };
+  if (c.mode === 'charge') { l.charge = st.charge; l.pasKg = c.pasKg; }
+  return l;
 }
 
 export function genererSeance(profil, etat, checkin = {}, aujourdhui = jour()) {
@@ -242,7 +277,8 @@ export function remplacerExercice(profil, etat, seance, index) {
 // Applique le résultat d'une séance : c'est ici que le coach apprend.
 // resultats[i] = tableau des répétitions (ou secondes) réalisées par série pour l'exercice i.
 // ressenti : 0 (trop facile) → 4 (trop dur).
-export function appliquerResultat(profil, etat, seance, resultats, ressenti, aujourdhui = jour(), minutes = seance.duree) {
+// charges[i] = charge en kg utilisée pour l'exercice i (machines).
+export function appliquerResultat(profil, etat, seance, resultats, ressenti, aujourdhui = jour(), minutes = seance.duree, charges = []) {
   const chaines = { ...etat.chaines };
   const usage = { ...etat.usage };
   const changements = [];
@@ -256,10 +292,31 @@ export function appliquerResultat(profil, etat, seance, resultats, ressenti, auj
     if (!ex.chaine) return;
     usage[ex.chaine] = (usage[ex.chaine] || 0) + 1;
     const c = chaine(ex.chaine);
-    const b = BORNES[c.mode];
-    const st = { ...chaines[ex.chaine] };
+    const b = bornesDe(c);
+    const st = { ...(chaines[ex.chaine] || { rang: 0, cible: b.depart, charge: null }) };
     const taux = total / (ex.cible * ex.series || 1);
     if (!faits.length) { chaines[ex.chaine] = st; return; }
+
+    if (c.mode === 'charge') {
+      const kg = Number(charges[i]);
+      if (kg > 0) st.charge = kg;
+      const avant = { ...st };
+      if (taux >= 1 && ressenti <= 2) st.cible += ressenti === 0 || taux >= 1.25 ? 2 : 1;
+      else if (taux < 0.75 || ressenti === 4) st.cible -= 1;
+      if (st.cible > b.max && st.charge) {
+        st.charge = Math.round((st.charge + c.pasKg) * 10) / 10; st.cible = b.depart; records++;
+        changements.push({ type: 'monte', texte: `${ex.nom} : passe à ${st.charge} kg` });
+      } else if (st.cible < b.min && st.charge) {
+        st.charge = Math.max(c.pasKg, Math.round((st.charge - c.pasKg) * 10) / 10); st.cible = 10;
+        changements.push({ type: 'descend', texte: `${ex.nom} : on redescend à ${st.charge} kg` });
+      } else {
+        st.cible = Math.min(b.max, Math.max(b.min, st.cible));
+        if (st.cible !== avant.cible) changements.push({ type: st.cible > avant.cible ? 'plus' : 'moins', texte: `${ex.nom} : ${st.cible > avant.cible ? '+' : ''}${st.cible - avant.cible} rép. à ${st.charge ?? '?'} kg la prochaine fois` });
+        else if (kg > 0 && kg !== avant.charge) changements.push({ type: 'plus', texte: `${ex.nom} : charge de travail notée, ${kg} kg` });
+      }
+      chaines[ex.chaine] = st;
+      return;
+    }
 
     if (taux >= 1 && ressenti <= 2) {
       st.cible += b.pas * (ressenti === 0 || taux >= 1.25 ? 2 : 1);
@@ -285,7 +342,7 @@ export function appliquerResultat(profil, etat, seance, resultats, ressenti, auj
       } else st.cible = b.min;
     } else if (st.cible !== chaines[ex.chaine].cible) {
       const plus = st.cible > chaines[ex.chaine].cible;
-      const unite = c.mode === 'reps' ? 'rép.' : 's';
+      const unite = c.mode === 'temps' ? 's' : 'rép.';
       changements.push({ type: plus ? 'plus' : 'moins', texte: `${ex.nom} : ${plus ? '+' : ''}${st.cible - chaines[ex.chaine].cible} ${unite} la prochaine fois` });
     }
     chaines[ex.chaine] = st;
@@ -358,7 +415,7 @@ export function semainesRecentes(etat, aujourdhui = jour(), n = 8) {
 
 // Exemple pour essayer l'appli sans remplir le questionnaire.
 export function exemple(aujourdhui = jour()) {
-  const profil = { prenom: 'Alex', objectif: 'forme', niveau: 'intermediaire', seancesSemaine: 3, duree: 30, materiel: ['halteres'], zones: ['genoux'], ton: 'motivant' };
+  const profil = { prenom: 'Alex', objectif: 'forme', niveau: 'intermediaire', seancesSemaine: 3, duree: 30, materiel: ['halteres'], zones: ['genoux'], ton: 'motivant', sexe: 'homme', age: 28, taille: 178, poids: 76, activite: 'assis' };
   let etat = etatInitial(profil);
   const dates = [-17, -15, -12, -10, -8, -5, -3].map(n => { const d = new Date(aujourdhui + 'T12:00:00'); d.setDate(d.getDate() + n); return jour(d); });
   dates.forEach((date, i) => {
