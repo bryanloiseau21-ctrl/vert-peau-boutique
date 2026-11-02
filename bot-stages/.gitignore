@@ -1,0 +1,4 @@
+resultats/
+__pycache__/
+.pytest_cache/
+app/data/entreprises.json

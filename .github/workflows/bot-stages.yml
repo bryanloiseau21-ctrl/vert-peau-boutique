@@ -1,0 +1,77 @@
+name: Bot stages informatique
+
+on:
+  workflow_dispatch:
+    inputs:
+      rayon:
+        description: "Rayon de recherche en km (max 50)"
+        default: "20"
+      min_salaries:
+        description: "Effectif minimal (0 = tout)"
+        default: "0"
+  schedule:
+    - cron: "17 5 * * 1"  # chaque lundi matin
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: bot-stages
+  cancel-in-progress: false
+
+jobs:
+  recherche:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tests
+        working-directory: bot-stages
+        run: pip install pytest && python -m pytest -q tests
+
+      # Garde en mémoire les contacts déjà trouvés (évite de tout re-scanner)
+      - name: Cache des contacts
+        uses: actions/cache@v4
+        with:
+          path: bot-stages/resultats/cache_contacts.json
+          key: contacts-${{ github.run_id }}
+          restore-keys: contacts-
+
+      - name: Lancer le bot
+        working-directory: bot-stages
+        run: |
+          python bot_stages.py --rayon "${{ github.event.inputs.rayon || '20' }}" \
+                               --min-salaries "${{ github.event.inputs.min_salaries || '0' }}"
+          cat resultats/entreprises_stage.md >> "$GITHUB_STEP_SUMMARY"
+          cp resultats/entreprises.json app/data/entreprises.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: resultats-stages
+          path: |
+            bot-stages/resultats/entreprises_stage.csv
+            bot-stages/resultats/entreprises_stage.md
+            bot-stages/resultats/entreprises.json
+
+      - name: Préparer l'appli
+        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: bot-stages/app
+
+  publier:
+    needs: recherche
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - id: deploiement
+        uses: actions/deploy-pages@v4
