@@ -1,7 +1,7 @@
 # Compile Rempart des Runes pour Android.
 # - À chaque modification : APK de test à installer directement sur un téléphone Android.
 # - Avec les secrets de signature : produit aussi le fichier .aab à déposer sur le Google Play Console.
-# Secrets de signature (optionnels) : RR_ANDROID_KEYSTORE_BASE64, RR_ANDROID_KEYSTORE_PASSWORD, RR_ANDROID_KEY_ALIAS, RR_ANDROID_KEY_PASSWORD
+# Secrets de signature (optionnels) : REMPART_ANDROID_KEYSTORE_BASE64, REMPART_ANDROID_KEYSTORE_PASSWORD, REMPART_ANDROID_KEY_ALIAS, REMPART_ANDROID_KEY_PASSWORD
 name: Rempart des Runes – Android
 
 on:
@@ -20,7 +20,7 @@ jobs:
       run:
         working-directory: rempart-des-runes
     env:
-      HAS_KS: ${{ secrets.RR_ANDROID_KEYSTORE_BASE64 != '' }}
+      HAS_KS: ${{ secrets.REMPART_ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,6 +35,8 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools   # le paquet « tools » par défaut n'existe plus
 
       - name: Installer et tester
         run: npm ci && npm run test:logique
@@ -52,10 +54,10 @@ jobs:
       - name: AAB signé pour le Play Store
         if: ${{ env.HAS_KS == 'true' }}
         env:
-          KS: ${{ secrets.RR_ANDROID_KEYSTORE_BASE64 }}
-          KS_PASS: ${{ secrets.RR_ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.RR_ANDROID_KEY_ALIAS }}
-          KEY_PASS: ${{ secrets.RR_ANDROID_KEY_PASSWORD }}
+          KS: ${{ secrets.REMPART_ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.REMPART_ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.REMPART_ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.REMPART_ANDROID_KEY_PASSWORD }}
         working-directory: rempart-des-runes/android
         run: |
           umask 077

@@ -12,7 +12,7 @@ npm run dev        # puis ouvre http://localhost:8080
 ```
 
 Après publication sur la branche principale, la version web est aussi en ligne sur
-`https://bryanloiseau21-ctrl.github.io/vert-peau-boutique/jeu/` (achats simulés).
+`https://bryanloiseau21-ctrl.github.io/vert-peau-boutique/rempart/` (achats simulés).
 
 ## Le jeu
 

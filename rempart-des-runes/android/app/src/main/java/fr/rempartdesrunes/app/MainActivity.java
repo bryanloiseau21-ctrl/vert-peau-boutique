@@ -1,4 +1,4 @@
-package fr.rempartdesrunes.jeu;
+package fr.rempartdesrunes.app;
 
 import com.getcapacitor.BridgeActivity;
 

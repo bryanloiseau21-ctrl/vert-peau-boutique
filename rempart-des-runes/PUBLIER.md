@@ -39,10 +39,10 @@ GitHub → **Settings** → **Secrets and variables** → **Actions** → **New 
 
 | Secret | Valeur |
 |---|---|
-| `RR_ANDROID_KEYSTORE_BASE64` | contenu de `keystore.txt` |
-| `RR_ANDROID_KEYSTORE_PASSWORD` | mot de passe du keystore |
-| `RR_ANDROID_KEY_ALIAS` | `rempart` |
-| `RR_ANDROID_KEY_PASSWORD` | mot de passe de la clé |
+| `REMPART_ANDROID_KEYSTORE_BASE64` | contenu de `keystore.txt` |
+| `REMPART_ANDROID_KEYSTORE_PASSWORD` | mot de passe du keystore |
+| `REMPART_ANDROID_KEY_ALIAS` | `rempart` |
+| `REMPART_ANDROID_KEY_PASSWORD` | mot de passe de la clé |
 
 ⚠️ Ne mets jamais le fichier `.keystore` dans le dépôt. Si tu le perds, tu ne pourras plus mettre à jour le jeu.
 
@@ -73,7 +73,7 @@ GitHub → **Settings** → **Secrets and variables** → **Actions** → **New 
 ### 4. Fiche et publication
 
 - **Contenu de l'appli** : politique de confidentialité → URL de `confidentialite.html`
-  (ex. `https://bryanloiseau21-ctrl.github.io/vert-peau-boutique/jeu/confidentialite.html`),
+  (ex. `https://bryanloiseau21-ctrl.github.io/vert-peau-boutique/rempart/confidentialite.html`),
   sécurité des données : **aucune donnée collectée**, publicités : **non**, questionnaire de classification :
   coche « achats intégrés » et « éléments aléatoires payants (coffres) » — les probabilités sont affichées dans le jeu.
 - Public cible : 13 ans et plus recommandé (les jeux avec coffres payants destinés aux enfants ont des règles plus strictes).
@@ -87,9 +87,9 @@ GitHub → **Settings** → **Secrets and variables** → **Actions** → **New 
 Si les secrets Apple de Boost Étudiant (`APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`) existent déjà,
 ils servent aussi pour ce jeu. Sinon, suis l'étape App Store de [`aides-etudiants/PUBLIER.md`](../aides-etudiants/PUBLIER.md).
 
-1. <https://developer.apple.com/account/resources/identifiers> → **+** → App IDs → identifiant **`fr.rempartdesrunes.jeu`**
+1. <https://developer.apple.com/account/resources/identifiers> → **+** → App IDs → identifiant **`fr.rempartdesrunes.app`**
    (la capacité **In-App Purchase** est active par défaut).
-2. <https://appstoreconnect.apple.com> → **Mes apps** → **+** → nom « Rempart des Runes », identifiant `fr.rempartdesrunes.jeu`, SKU `rempart`.
+2. <https://appstoreconnect.apple.com> → **Mes apps** → **+** → nom « Rempart des Runes », identifiant `fr.rempartdesrunes.app`, SKU `rempart`.
 3. **Contrats** : signe l'accord **Paid Apps** et renseigne banque + fiscalité (obligatoire pour vendre).
 4. Dans l'app → **Monétisation → Achats intégrés** → crée les produits avec **les mêmes identifiants** :
    - **Consommables** : `gems_80`, `gems_500`, `gems_1200`, `gems_2800`

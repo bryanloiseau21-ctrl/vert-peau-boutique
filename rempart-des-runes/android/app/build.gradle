@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "fr.rempartdesrunes.jeu"
+    namespace = "fr.rempartdesrunes.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "fr.rempartdesrunes.jeu"
+        applicationId "fr.rempartdesrunes.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
