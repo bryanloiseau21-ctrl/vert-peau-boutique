@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#1a1430">
+<meta name="description" content="Invoque des runes, fusionne-les et défends ton rempart face aux vagues de monstres.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Rempart des Runes</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="pill" title="Trophées">🏆 <span id="tTro">0</span></div>
+    <div class="sp"></div>
+    <div class="pill" title="Pièces">🪙 <span id="tCoin">0</span></div>
+    <button class="pill plus" data-action="tab" data-tab="shop" title="Gemmes">💎 <span id="tGem">0</span> <b>+</b></button>
+    <button class="icon-btn" data-action="settings" aria-label="Réglages">⚙️</button>
+  </header>
+
+  <main>
+    <section class="screen on" id="s-home">
+      <div class="arena" id="hArena"></div>
+      <button class="btn big play" data-action="play">⚔️ JOUER</button>
+      <button class="daily" id="hDaily" data-action="daily" hidden></button>
+      <div class="stats">
+        <div class="stat"><b id="hBest">0</b><span>Meilleure vague</span></div>
+        <div class="stat"><b id="hGames">0</b><span>Parties</span></div>
+        <div class="stat"><b id="hPass">—</b><span>Pass Royal</span></div>
+      </div>
+      <h3>Ton deck</h3>
+      <div class="deckrow" id="hDeck" data-action="tab" data-tab="deck"></div>
+      <h3>Comment jouer</h3>
+      <ul class="howto">
+        <li><b>Invoque</b> des runes au hasard sur le plateau avec ta mana ✦.</li>
+        <li><b>Glisse</b> une rune sur une rune <b>identique et de même niveau</b> : elles fusionnent en une rune plus puissante.</li>
+        <li><b>Renforce</b> un type de rune avec les boutons du bas.</li>
+        <li>Un <b>boss</b> arrive toutes les 5 vagues. Tu as 3 vies.</li>
+      </ul>
+    </section>
+
+    <section class="screen" id="s-deck">
+      <h2>Deck</h2>
+      <p class="muted small">Touche un emplacement, puis une rune de ta collection pour l'y placer.</p>
+      <div class="deckrow" id="dDeck"></div>
+      <h3>Collection</h3>
+      <div class="grid" id="dColl"></div>
+    </section>
+
+    <section class="screen" id="s-chest">
+      <h2>Coffres</h2>
+      <p class="muted small">Les coffres donnent des cartes pour améliorer tes runes. Probabilités affichées pour chaque coffre.</p>
+      <div id="cList"></div>
+    </section>
+
+    <section class="screen" id="s-shop">
+      <h2>Boutique</h2>
+      <div class="demo" id="demoNote" hidden>Version web de démonstration : les achats sont <b>simulés</b>, aucun paiement réel n'est effectué. Les vrais achats se font dans l'appli Android / iPhone.</div>
+      <div id="shopIap">
+        <h3>Offres spéciales</h3>
+        <div id="shopSpecial"></div>
+        <h3>Gemmes</h3>
+        <div id="shopGems"></div>
+      </div>
+      <h3>Pièces</h3>
+      <div id="shopCoins"></div>
+      <button class="btn ghost wide" data-action="restore" id="restoreBtn">Restaurer mes achats</button>
+      <p class="muted tiny legal">Les achats sont facturés sur ton compte Google Play ou Apple. Les gemmes sont une monnaie virtuelle sans valeur hors du jeu. Demande l'accord d'un parent si tu es mineur. <a href="confidentialite.html" target="_blank" rel="noopener">Confidentialité</a></p>
+    </section>
+  </main>
+
+  <nav class="nav">
+    <button data-action="tab" data-tab="home" class="on"><b>🏰</b>Accueil</button>
+    <button data-action="tab" data-tab="deck"><b>🃏</b>Deck<i class="dot" id="nDeck" hidden></i></button>
+    <button data-action="tab" data-tab="chest"><b>🎁</b>Coffres<i class="dot" id="nChest" hidden></i></button>
+    <button data-action="tab" data-tab="shop"><b>💎</b>Boutique</button>
+  </nav>
+
+  <div id="battle"><canvas id="cv"></canvas></div>
+  <div class="modal" id="modal" role="dialog" aria-modal="true"><div class="box" id="mbox"></div></div>
+  <div class="toast" id="toast" role="status"></div>
+  <div class="loading" id="loading">🏰</div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

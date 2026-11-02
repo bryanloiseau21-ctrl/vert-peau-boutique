@@ -1,0 +1,13 @@
+{
+  "appId": "fr.rempartdesrunes.jeu",
+  "appName": "Rempart des Runes",
+  "webDir": "www",
+  "backgroundColor": "#1a1430",
+  "ios": {
+    "contentInset": "never",
+    "scheme": "Rempart"
+  },
+  "android": {
+    "backgroundColor": "#1a1430"
+  }
+}

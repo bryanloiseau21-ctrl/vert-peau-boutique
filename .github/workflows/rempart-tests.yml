@@ -1,0 +1,38 @@
+# Vérifie Rempart des Runes à chaque modification : logique du jeu, équilibrage et parcours complet dans un navigateur.
+name: Rempart des Runes – tests
+
+on:
+  push:
+    paths: ["rempart-des-runes/**", ".github/workflows/rempart-*.yml"]
+  pull_request:
+    paths: ["rempart-des-runes/**", ".github/workflows/rempart-*.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: rempart-des-runes
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: rempart-des-runes/package-lock.json
+      - run: npm ci
+      - name: Logique du jeu
+        run: npm run test:logique
+      - name: Équilibrage (parties simulées)
+        run: npm run equilibrage -- --parties 20 >> "$GITHUB_STEP_SUMMARY"
+      - name: Navigateur de test
+        run: npm install --no-save playwright@1 && npx playwright install --with-deps chromium
+      - name: Parcours complet (iPhone)
+        run: node tests/ui.test.js

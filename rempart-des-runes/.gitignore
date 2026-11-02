@@ -1,0 +1,7 @@
+node_modules/
+*.keystore
+*.jks
+*.p8
+android/app/build/
+android/.gradle/
+ios/App/build/
