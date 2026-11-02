@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Boost Étudiant</string>
+    <string name="title_activity_main">Boost Étudiant</string>
+    <string name="package_name">fr.boostetudiant.app</string>
+    <string name="custom_url_scheme">fr.boostetudiant.app</string>
+</resources>

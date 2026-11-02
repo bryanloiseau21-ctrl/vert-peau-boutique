@@ -1,0 +1,86 @@
+# Compile Boost Étudiant pour Android.
+# - Produit un APK de test à installer directement sur un téléphone Android.
+# - Avec les secrets de signature : produit aussi le fichier .aab à déposer sur le Google Play Console.
+# Secret obligatoire : GOOGLE_SERVICES_JSON (fichier Firebase Android, voir PUBLIER.md)
+# Secrets de signature : ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+name: Boost Étudiant – Android
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: aides-etudiants
+    env:
+      HAS_KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: aides-etudiants/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+
+      - name: Installer et vérifier les données
+        run: npm ci && npm run check && node scripts/vendor-firebase.js
+
+      - name: Lieux CROUS (open data)
+        run: node scripts/lieux.js || echo "::warning::Lieux CROUS indisponibles, l'onglet Autour affichera un message"
+
+      - name: Configuration Firebase
+        env:
+          GSJ: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          grep -q 'apiKey: "[^"]' www/firebase-config.js || { echo "::error::Remplis www/firebase-config.js (voir PUBLIER.md)"; exit 1; }
+          [ -n "$GSJ" ] || { echo "::error::Secret GOOGLE_SERVICES_JSON manquant (voir PUBLIER.md)"; exit 1; }
+          echo "$GSJ" | base64 --decode > android/app/google-services.json
+
+      - name: Synchroniser le projet Android
+        run: |
+          npx cap sync android
+          VERSION=$(node -p "require('./package.json').version")
+          sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"$VERSION\"/" android/app/build.gradle
+
+      - name: APK de test
+        working-directory: aides-etudiants/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: AAB signé pour le Play Store
+        if: ${{ env.HAS_KS == 'true' }}
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        working-directory: aides-etudiants/android
+        run: |
+          umask 077
+          echo "$KS" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          ./gradlew bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.keystore" \
+            -Pandroid.injected.signing.store.password="$KS_PASS" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASS"
+          rm -f "$RUNNER_TEMP/release.keystore"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: boost-etudiant-android
+          if-no-files-found: ignore
+          path: |
+            aides-etudiants/android/app/build/outputs/apk/debug/*.apk
+            aides-etudiants/android/app/build/outputs/bundle/release/*.aab

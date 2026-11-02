@@ -1,0 +1,43 @@
+{
+  "appId": "fr.boostetudiant.app",
+  "appName": "Boost Étudiant",
+  "webDir": "www",
+  "backgroundColor": "#120b2e",
+  "ios": {
+    "contentInset": "never",
+    "scheme": "App"
+  },
+  "android": {
+    "backgroundColor": "#120b2e"
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": true,
+      "providers": [
+        "google.com",
+        "apple.com"
+      ]
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#8b5cf6"
+    }
+  },
+  "experimental": {
+    "ios": {
+      "spm": {
+        "swiftToolsVersion": "6.1",
+        "packageOptions": {
+          "@capacitor-firebase/authentication": {
+            "symlink": true
+          }
+        },
+        "packageTraits": {
+          "@capacitor-firebase/authentication": [
+            "Google"
+          ]
+        }
+      }
+    }
+  }
+}

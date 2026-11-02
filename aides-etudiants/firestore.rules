@@ -1,0 +1,18 @@
+rules_version = '2';
+// Chaque utilisateur ne peut lire et écrire QUE son propre document. Tout le reste est interdit.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /utilisateurs/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['favoris', 'profil', 'reglages', 'maj'])
+        && request.resource.data.favoris is list && request.resource.data.favoris.size() <= 200
+        && request.resource.data.profil is list && request.resource.data.profil.size() <= 20
+        && request.resource.data.reglages is map
+        && request.resource.data.maj == request.time;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
