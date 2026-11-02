@@ -28,15 +28,17 @@ POUR CHAQUE AIDE :
 • Les étapes pour l'obtenir
 • Le lien vers le site officiel
 
+📍 AUTOUR DE MOI : les restos U (repas à 1 €) et résidences CROUS près de toi, avec la distance en km et l'itinéraire.
+🔔 ALERTES : une notif quand tu passes près d'un resto U, et des rappels pour ne jamais rater ton dossier de bourse.
 🎯 « POUR MOI » : coche ta situation (boursier, alternant, locataire…) et vois direct les aides qui te correspondent.
-💜 FAVORIS : garde les aides qui t'intéressent.
+💜 FAVORIS : garde les aides qui t'intéressent, synchronisés sur tous tes appareils avec ton compte Google ou Apple (optionnel).
 📴 MARCHE SANS INTERNET.
-🔒 ZÉRO DONNÉE COLLECTÉE : pas de compte, pas de pub, pas de traceur.
+🔒 TA POSITION RESTE SUR TON TÉLÉPHONE. Pas de pub, pas de traceur.
 
 Boost Étudiant est une appli indépendante, non affiliée au CROUS, à la CAF ou à l'État. Les montants sont indicatifs : le site officiel de chaque aide fait foi.
 
 ## Mots-clés (App Store, 100 caractères max)
-aide,étudiant,CROUS,APL,bourse,CAF,logement,repas,psy,mutuelle,budget,alternance,fac,argent
+aide,étudiant,CROUS,APL,bourse,CAF,logement,resto U,repas,psy,mutuelle,budget,alternance,fac
 
 ## Catégorie
 Principale : Éducation · Secondaire : Finance (App Store) / Éducation (Play Store)
@@ -46,8 +48,15 @@ Principale : Éducation · Secondaire : Finance (App Store) / Éducation (Play S
 
 ## Confidentialité
 - URL de la politique : `https://bryanloiseau21-ctrl.github.io/vert-peau-boutique/aides/confidentialite.html`
-- App Store → « Confidentialité de l'app » : **Données non collectées**
-- Play Store → « Sécurité des données » : **Aucune donnée collectée, aucune donnée partagée**
+- App Store → « Confidentialité de l'app » → Données collectées, **liées à l'utilisateur, sans suivi** :
+  - Coordonnées : **Nom**, **Adresse e-mail** — finalité : Fonctionnalités de l'app
+  - Identifiants : **Identifiant de l'utilisateur** — finalité : Fonctionnalités de l'app
+  - (Ne PAS cocher « Localisation » : elle ne quitte jamais le téléphone)
+- Play Store → « Sécurité des données » :
+  - Collectées : Nom, Adresse e-mail, ID utilisateur — Fonctionnalités de l'appli, Gestion du compte — **facultatif** (compte optionnel)
+  - Chiffrées en transit : Oui · Suppression possible : Oui (dans l'appli)
+  - Position : non collectée (traitée uniquement sur l'appareil)
+  - Aucune donnée partagée avec des tiers
 
 ## Captures d'écran
 - iPhone 6,9" (1320 × 2868) : dossier `captures-iphone/`

@@ -1,5 +1,7 @@
 node_modules/
-ios/
-android/
 *.keystore
 *.p8
+www/lieux.json
+# Fichiers Firebase natifs : injectés au moment de la compilation (secrets GitHub)
+ios/App/App/GoogleService-Info.plist
+android/app/google-services.json

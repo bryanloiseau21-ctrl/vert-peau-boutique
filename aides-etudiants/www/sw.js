@@ -1,6 +1,6 @@
 // Service worker : l'appli marche hors connexion après la première ouverture.
-const CACHE = "boost-etudiant-v2";
-const COQUILLE = ["./", "index.html", "style.css", "app.js", "data.js", "manifest.webmanifest",
+const CACHE = "boost-etudiant-v3";
+const COQUILLE = ["./", "index.html", "style.css", "app.js", "data.js", "compte.js", "firebase-config.js", "manifest.webmanifest",
   "confidentialite.html", "icons/icon.svg", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png",
   "fonts/inter.woff2", "fonts/bricolage.woff2"];
 

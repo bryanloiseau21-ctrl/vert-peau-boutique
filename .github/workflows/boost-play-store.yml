@@ -1,7 +1,8 @@
 # Compile Boost Étudiant pour Android.
-# - Sans secrets : produit un APK de test à installer directement sur un téléphone Android.
+# - Produit un APK de test à installer directement sur un téléphone Android.
 # - Avec les secrets de signature : produit aussi le fichier .aab à déposer sur le Google Play Console.
-# Secrets (optionnels) : ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# Secret obligatoire : GOOGLE_SERVICES_JSON (fichier Firebase Android, voir PUBLIER.md)
+# Secrets de signature : ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
 name: Boost Étudiant – Android
 
 on:
@@ -35,12 +36,21 @@ jobs:
       - uses: android-actions/setup-android@v3
 
       - name: Installer et vérifier les données
-        run: npm ci && npm run check
+        run: npm ci && npm run check && node scripts/vendor-firebase.js
 
-      - name: Générer le projet Android
+      - name: Lieux CROUS (open data)
+        run: node scripts/lieux.js || echo "::warning::Lieux CROUS indisponibles, l'onglet Autour affichera un message"
+
+      - name: Configuration Firebase
+        env:
+          GSJ: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
-          npx cap add android
-          npx capacitor-assets generate --android --iconBackgroundColor '#120b2e' --splashBackgroundColor '#120b2e'
+          grep -q 'apiKey: "[^"]' www/firebase-config.js || { echo "::error::Remplis www/firebase-config.js (voir PUBLIER.md)"; exit 1; }
+          [ -n "$GSJ" ] || { echo "::error::Secret GOOGLE_SERVICES_JSON manquant (voir PUBLIER.md)"; exit 1; }
+          echo "$GSJ" | base64 --decode > android/app/google-services.json
+
+      - name: Synchroniser le projet Android
+        run: |
           npx cap sync android
           VERSION=$(node -p "require('./package.json').version")
           sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"$VERSION\"/" android/app/build.gradle

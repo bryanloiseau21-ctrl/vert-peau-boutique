@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.google.com; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://*.googleapis.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src https://*.firebaseapp.com https://*.web.app https://accounts.google.com">
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Boost Étudiant</title>
@@ -38,6 +38,42 @@
       <div class="liste" id="liste"></div>
     </section>
 
+    <!-- ── Autour de moi ── -->
+    <section id="vue-autour" class="vue">
+      <div class="carte-profil" id="autour-intro">
+        <h2>📍 Ce qu'il y a près de toi</h2>
+        <p class="muted">Restos U (repas à 1 €) et résidences CROUS autour de toi, avec la distance. Ta position reste sur ton téléphone, elle n'est jamais envoyée 🔒</p>
+        <button class="btn" id="btn-position">📍 Trouver autour de moi</button>
+      </div>
+      <div id="autour-outils" hidden>
+        <div class="cats" id="filtres-lieux">
+          <button class="cat active" data-lieu="tout">✨ Tout</button>
+          <button class="cat" data-lieu="resto">🍽️ Restos U</button>
+          <button class="cat" data-lieu="logement">🏢 Logements</button>
+        </div>
+        <label class="rayon">Dans un rayon de <b id="rayon-val">10 km</b>
+          <input type="range" id="rayon" min="1" max="50" step="1" value="10">
+        </label>
+        <p class="section-titre" id="autour-titre"></p>
+        <div class="liste" id="liste-autour"></div>
+        <button class="btn ghost" id="btn-actualiser">🔄 Actualiser ma position</button>
+      </div>
+
+      <div class="carte-info" id="notifs-box">
+        <h2>🔔 Notifications</h2>
+        <div class="reglage">
+          <div><b>Alerte quand je suis près d'un lieu</b><small>Un resto U ou une résidence à moins de <span id="alerte-val">2 km</span></small></div>
+          <button class="switch" id="sw-prox" role="switch" aria-checked="false" aria-label="Alerte de proximité"><i></i></button>
+        </div>
+        <input type="range" id="rayon-alerte" min="1" max="10" step="1" value="2" aria-label="Distance d'alerte">
+        <div class="reglage" id="ligne-rappels">
+          <div><b>Rappels des dates clés</b><small>Dossier de bourse (mars et mai), rentrée (septembre)</small></div>
+          <button class="switch" id="sw-rappels" role="switch" aria-checked="false" aria-label="Rappels des dates clés"><i></i></button>
+        </div>
+        <p class="note" id="notifs-note">L'alerte se déclenche quand tu ouvres l'appli ou y reviens.</p>
+      </div>
+    </section>
+
     <!-- ── Pour moi ── -->
     <section id="vue-moi" class="vue">
       <div class="carte-profil">
@@ -56,6 +92,20 @@
 
     <!-- ── Infos ── -->
     <section id="vue-infos" class="vue">
+      <div class="carte-profil" id="compte-box" hidden>
+        <div id="compte-deconnecte">
+          <h2>👤 Ton compte</h2>
+          <p class="muted">Connecte-toi pour retrouver tes favoris et ton profil sur tous tes appareils. Ta position n'est jamais enregistrée.</p>
+          <button class="btn btn-google" id="btn-google"><span class="g">G</span> Continuer avec Google</button>
+          <button class="btn btn-apple" id="btn-apple" hidden> Continuer avec Apple</button>
+        </div>
+        <div id="compte-connecte" hidden>
+          <div class="qui"><span class="avatar" id="avatar"></span><div><b id="compte-nom"></b><small id="compte-email"></small></div></div>
+          <p class="sync" id="compte-sync">✅ Favoris et profil synchronisés</p>
+          <button class="btn ghost" id="btn-deconnexion">Se déconnecter</button>
+          <button class="btn danger" id="btn-supprimer">Supprimer mon compte et mes données</button>
+        </div>
+      </div>
       <div class="carte-info" id="install-box">
         <h2>📲 Installer l'appli</h2>
         <button class="btn" id="btn-install" hidden>Installer maintenant</button>
@@ -81,7 +131,7 @@
         <a class="tel" href="tel:3114">Prévention suicide 24h/24 <b>3114</b></a>
         <a class="tel" href="tel:0800235236">Fil Santé Jeunes <b>0 800 235 236</b></a>
       </div>
-      <p class="mention">Infos vérifiées en <span id="maj"></span>. Les montants changent chaque année : le site officiel de chaque aide fait toujours foi.<br>Appli indépendante, non affiliée au CROUS, à la CAF ou à l'État.<br><a class="lien-discret" href="confidentialite.html">Confidentialité : aucune donnée collectée</a></p>
+      <p class="mention">Infos vérifiées en <span id="maj"></span>. Les montants changent chaque année : le site officiel de chaque aide fait toujours foi.<br>Appli indépendante, non affiliée au CROUS, à la CAF ou à l'État.<br><a class="lien-discret" href="confidentialite.html">Confidentialité : position jamais envoyée, compte optionnel</a></p>
     </section>
   </main>
 
@@ -92,6 +142,7 @@
   <!-- Barre d'onglets -->
   <nav class="tabbar" aria-label="Navigation">
     <button class="tab active" data-vue="explorer"><span>🔍</span>Explorer</button>
+    <button class="tab" data-vue="autour"><span>📍</span>Autour</button>
     <button class="tab" data-vue="moi"><span>🎯</span>Pour moi</button>
     <button class="tab" data-vue="favoris"><span>💜</span>Favoris<i class="badge" id="badge-fav" hidden></i></button>
     <button class="tab" data-vue="infos"><span>💡</span>Infos</button>
@@ -99,7 +150,9 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
+  <script type="module" src="compte.js"></script>
 </body>
 </html>

@@ -30,6 +30,8 @@ jobs:
       - run: npm ci
       - name: Données des aides
         run: npm run check
+      - name: Firebase intégré à jour
+        run: node scripts/vendor-firebase.js && git diff --exit-code -- www/vendor
       - name: Navigateur de test
         run: npm install --no-save playwright@1 && npx playwright install --with-deps chromium
       - name: Parcours complet (iPhone)
