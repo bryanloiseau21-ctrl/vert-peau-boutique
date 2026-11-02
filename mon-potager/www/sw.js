@@ -1,7 +1,7 @@
 // Service worker : l'appli fonctionne hors connexion après la première ouverture.
-const CACHE = 'mon-potager-v1';
-const FILES = ['./', 'index.html', 'style.css', 'manifest.webmanifest', 'icons/icon.svg',
-  'js/app.js', 'js/data.js', 'js/logique.js', 'js/stockage.js', 'js/detourage.js', 'js/scene3d.js',
+const CACHE = 'mon-potager-v3';
+const FILES = ['./', 'index.html', 'style.css', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'confidentialite.html',
+  'js/app.js', 'js/data.js', 'js/logique.js', 'js/stockage.js', 'js/detourage.js', 'js/scene3d.js', 'js/natif.js',
   'vendor/three.module.min.js', 'vendor/three.core.min.js', 'vendor/OrbitControls.js'];
 
 self.addEventListener('install', (e) => {

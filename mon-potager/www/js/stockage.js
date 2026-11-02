@@ -19,13 +19,17 @@ function ouvrir() {
   return dbPromesse;
 }
 
+// Les images sont rangées en ArrayBuffer (plus fiable que les Blob sur certains téléphones)
+const versStockage = async (v) => (v instanceof Blob ? { __image: true, type: v.type, data: await v.arrayBuffer() } : v);
+const depuisStockage = (v) => (v && v.__image ? new Blob([v.data], { type: v.type }) : v);
+
 export async function lire(cle) {
   const db = await ouvrir();
   if (!db) return memoire.get(cle);
   return new Promise((resolve) => {
     try {
       const req = db.transaction(MAGASIN, 'readonly').objectStore(MAGASIN).get(cle);
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => resolve(depuisStockage(req.result));
       req.onerror = () => resolve(memoire.get(cle));
     } catch { resolve(memoire.get(cle)); }
   });
@@ -35,6 +39,7 @@ export async function ecrire(cle, valeur) {
   memoire.set(cle, valeur);
   const db = await ouvrir();
   if (!db) return;
+  valeur = await versStockage(valeur);
   await new Promise((resolve) => {
     try {
       const tx = db.transaction(MAGASIN, 'readwrite');
@@ -56,7 +61,8 @@ export const ETAT_DEFAUT = () => ({
   hemisphere: 'nord',
   zoneAuto: true,
   fond: 'ciel',
-  etiquettes: true,
+  etiquettes: 'auto', // auto (toutes si peu de plantes) · toutes · aucune
+  notifs: true, // rappels de récolte (appli Android / iPhone)
   plantations: [], // { id, plante, date, qte, note, x, y }
 });
 

@@ -167,7 +167,8 @@ export function creerScene(conteneur, { onSelect } = {}) {
   const ombreTex = textureOmbre();
 
   let dims = { l: 4, L: 3 };
-  let etiquettesVisibles = true;
+  let modeEtiquettes = 'auto';
+  let selection = null;
   let fondActuel = 'ciel';
   let texturePhoto = null;
 
@@ -234,7 +235,8 @@ export function creerScene(conteneur, { onSelect } = {}) {
     for (let i = 0; i < 5; i++) {
       const n = nuage(r);
       const a = (i / 5) * Math.PI * 2;
-      n.userData = { a, d: R + 2.5 + r() * 2.5, h: 1.2 + r() * 2.5, v: 0.02 + r() * 0.03 };
+      n.userData = { a, d: R + 1.5 + r() * 1.5, h: R * 0.5 + r() * R * 0.4, v: 0.02 + r() * 0.03 };
+      n.scale.setScalar(0.6 + r() * 0.3);
       ciel.add(n);
     }
 
@@ -249,9 +251,9 @@ export function creerScene(conteneur, { onSelect } = {}) {
   function cadrer(R) {
     // En portrait, on recule davantage pour voir toute l'île (et son dessous rocheux)
     const ratio = (conteneur.clientWidth || 1) / (conteneur.clientHeight || 1);
-    const k = ratio < 0.8 ? 1.55 : 1;
+    const k = ratio < 0.8 ? 1.4 : 1;
     camera.position.set(R * 0.2 * k, R * 1.15 * k, R * 2.35 * k);
-    controles.target.set(0, -R * 0.22, 0);
+    controles.target.set(0, -R * 0.12, 0);
     controles.update();
   }
 
@@ -301,10 +303,22 @@ export function creerScene(conteneur, { onSelect } = {}) {
       const { t, ratio } = textureEtiquette(p.titre, p.sousTitre, p.couleur);
       const etiquette = new THREE.Sprite(new THREE.SpriteMaterial({ map: t }));
       const hE = 0.42; etiquette.scale.set(hE * ratio, hE, 1); etiquette.position.y = 1.15;
-      etiquette.userData.id = p.id; etiquette.name = 'etiquette'; etiquette.visible = etiquettesVisibles;
+      etiquette.userData.id = p.id; etiquette.name = 'etiquette';
       g.add(etiquette);
       g.userData = { phase: i * 0.7, pastille, etiquette };
+      g.userData.id = p.id;
       marqueurs.add(g);
+    });
+    majEtiquettes();
+  }
+
+  // Étiquettes : en mode auto, toutes s'il y a peu de plantes, sinon seulement celle touchée
+  function majEtiquettes() {
+    const n = marqueurs.children.length;
+    marqueurs.children.forEach((g) => {
+      const id = g.userData.id;
+      g.userData.etiquette.visible = modeEtiquettes === 'toutes' || id === selection ||
+        (modeEtiquettes === 'auto' && n <= 5);
     });
   }
 
@@ -319,7 +333,9 @@ export function creerScene(conteneur, { onSelect } = {}) {
     const cibles = [];
     marqueurs.children.forEach((g) => { cibles.push(g.userData.pastille); if (g.userData.etiquette.visible) cibles.push(g.userData.etiquette); });
     const hit = ray.intersectObjects(cibles, false)[0];
-    onSelect?.(hit ? hit.object.userData.id : null);
+    selection = hit ? hit.object.userData.id : null;
+    majEtiquettes();
+    onSelect?.(selection);
   });
 
   // ── Boucle d'animation ──
@@ -351,7 +367,7 @@ export function creerScene(conteneur, { onSelect } = {}) {
       n.position.set(Math.cos(u.a) * u.d, u.h, Math.sin(u.a) * u.d); n.rotation.y = -u.a;
       // un nuage trop proche de la caméra s'efface pour ne pas cacher le potager
       const proche = n.position.distanceTo(camera.position);
-      const op = Math.min(0.95, Math.max(0, (proche - R * 0.9) / (R * 0.8)));
+      const op = Math.min(0.95, Math.max(0, (proche - R * 2.7) / (R * 0.6)));
       n.children.forEach((m) => { m.material.opacity = op; });
       n.visible = op > 0.02;
     });
@@ -377,7 +393,7 @@ export function creerScene(conteneur, { onSelect } = {}) {
     },
     majPlantations,
     setFond: appliquerFond,
-    setEtiquettes(v) { etiquettesVisibles = v; marqueurs.children.forEach((g) => { g.userData.etiquette.visible = v; }); },
+    setEtiquettes(mode) { modeEtiquettes = mode === true ? 'toutes' : mode === false ? 'aucune' : mode; majEtiquettes(); },
     setAutoRotation(v) { controles.autoRotate = v; },
     recentrer() { cadrer(R); },
     setActif(v) { actif = v; if (v) redimensionner(); },

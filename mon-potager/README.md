@@ -5,7 +5,8 @@ Appli pour suivre son potager **façon jeu** : on prend une photo, l'appli **dé
 Chaque plante a sa pastille avec sa **date de plantation**, sa **récolte estimée** et une jauge d'avancement.
 Les **conseils** du mois s'adaptent à **la saison, au mois et à l'endroit** où l'on habite.
 
-Fonctionne dans le navigateur du téléphone (installable sur l'écran d'accueil, marche hors connexion).
+Fonctionne sur **Android**, **iPhone** (applis natives via Capacitor, comme Boost Étudiant) et dans le **navigateur**
+(installable sur l'écran d'accueil, marche hors connexion). 👉 Pour la publier sur les stores : [`PUBLIER.md`](PUBLIER.md).
 
 ## Lancer
 
@@ -28,7 +29,19 @@ npm run dev        # puis ouvre http://localhost:8080
 - **Climat** : méditerranéen, océanique, continental, montagne (> 900 m), tropical, hémisphère nord ou sud. Les dates sont décalées automatiquement (ex. tomates plantées en avril–mai à Marseille, juin–juillet en montagne).
 - **Récolte estimée** : au moins le délai de culture de la plante **et** dans un mois de récolte pour ta zone.
 - **Côté jeu** : niveau de jardinier et XP (plantations, nouvelles espèces, catégories, photo, région), confettis au passage de niveau.
+- **Natif (Android / iPhone)** : 🔔 notification le matin de chaque récolte estimée, 📤 partage de l'image 3D, 📳 vibrations, 📍 GPS, bouton retour Android.
 - **Données** : tout reste sur le téléphone (IndexedDB). La météo, l'altitude et la recherche de ville utilisent [Open-Meteo](https://open-meteo.com) (gratuit, sans compte) ; sans connexion, on choisit son climat à la main.
+
+## Appli Android / iPhone
+
+```bash
+npm run sync        # copie www/ dans les projets android/ et ios/
+npm run icones      # régénère les icônes depuis www/icons/icon.svg
+npm run assets      # puis les tailles natives (icônes + écran de démarrage)
+npm run captures    # captures pour les stores (store/)
+```
+
+Compilation automatique sur GitHub : **Mon Potager – Android** (APK à chaque modification) et **Mon Potager – App Store** (TestFlight).
 
 ## Tests
 
@@ -44,4 +57,5 @@ node tests/ui.test.js  # parcours complet dans Chromium (format iPhone)
 - `www/js/scene3d.js` : île 3D (Three.js)
 - `www/js/detourage.js` : écran de détourage de la photo
 - `www/js/app.js` : interface
+- `www/js/natif.js` : notifications, partage, GPS, vibrations (Capacitor)
 - `www/vendor/` : Three.js intégré (`npm run vendor` pour le mettre à jour)

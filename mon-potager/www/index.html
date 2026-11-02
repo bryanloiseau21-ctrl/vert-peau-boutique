@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Mon Potager">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
 </head>
@@ -75,11 +75,13 @@
             <label class="champ">↔️ Largeur (m) <input id="r-largeur" type="number" min="0.3" max="100" step="0.1"></label>
             <label class="champ">↕️ Longueur (m) <input id="r-longueur" type="number" min="0.3" max="100" step="0.1"></label>
           </div>
+          <label class="interrupteur" id="ligne-notifs"><input type="checkbox" id="r-notifs"><span></span>🔔 Me prévenir quand une récolte est prête</label>
           <div class="rangee">
             <button class="btn btn-gris" data-act="exporter">💾 Sauvegarder</button>
             <label class="btn btn-gris">📂 Restaurer<input type="file" id="importer" accept="application/json,.json" hidden></label>
           </div>
           <button class="btn btn-rouge" data-act="reinitialiser">🗑️ Tout effacer</button>
+          <p class="mentions"><a href="confidentialite.html">🔒 Confidentialité</a> · Météo : <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a></p>
         </details>
       </div>
     </section>

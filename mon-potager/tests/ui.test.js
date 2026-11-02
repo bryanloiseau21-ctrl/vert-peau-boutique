@@ -97,6 +97,7 @@ try {
   await page.waitForSelector('#bandeau-placement:not([hidden])');
   ok(true, 'Mode placement activé après l\'ajout');
   await page.waitForSelector('#voile', { state: 'hidden' });
+  await page.waitForTimeout(700); // le plan défile doucement jusqu'à l'écran
   const plan = await page.locator('#plan').boundingBox();
   await page.mouse.click(plan.x + plan.width * 0.3, plan.y + plan.height * 0.4);
   ok(await page.locator('.marqueur').count() === 1, 'Plante placée sur le plan');
@@ -156,6 +157,8 @@ try {
   await page.waitForFunction(() => document.querySelector('#plan-img')?.getAttribute('src'));
   const etat = await page.evaluate(() => window.monPotager.etat);
   ok(etat.plantations.length === 1 && etat.zone === 'mediterraneen', 'Données conservées après rechargement');
+  ok(await page.evaluate(() => new Promise((r) => { const i = document.querySelector('#plan-img'); if (i.complete) r(i.naturalWidth > 0); else { i.onload = () => r(true); i.onerror = () => r(false); } })),
+    'Photo du potager toujours là après rechargement');
   ok(!(await page.isVisible('#accueil')), 'Pas d\'accueil au retour');
   ok(Number(await page.textContent('#niveau-num')) >= 2, 'Niveau de jardinier gagné');
 

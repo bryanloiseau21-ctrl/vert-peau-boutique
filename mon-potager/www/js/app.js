@@ -7,6 +7,7 @@ import {
 import { lire, ecrire, chargerEtat, sauverEtat, ETAT_DEFAUT } from './stockage.js';
 import { chargerImage, ouvrirDetourage, redresserCanvas } from './detourage.js';
 import { creerScene, FONDS } from './scene3d.js';
+import { NATIF, vibrer, partagerFichier, obtenirPosition, programmerRecoltes, surNotificationTouchee, surBoutonRetour } from './natif.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -91,7 +92,7 @@ function renderNiveau(feter = true) {
   $('#xp-barre').style.width = `${Math.min(100, ((xp - bas) / (haut - bas)) * 100)}%`;
   $('#niveau').dataset.xp = xp;
   if (feter && etat.niveauVu != null && n + 1 > etat.niveauVu) {
-    confettis(); toast(`🎉 Niveau ${n + 1} : ${NIVEAUX[n][1]} !`, 'or');
+    confettis(); vibrer('fort'); toast(`🎉 Niveau ${n + 1} : ${NIVEAUX[n][1]} !`, 'or');
   }
   if (etat.niveauVu !== n + 1) { etat.niveauVu = n + 1; sauver(); }
 }
@@ -137,7 +138,10 @@ function majAccueil() {
 async function appliquerPlan(blob) {
   if (planURL) URL.revokeObjectURL(planURL);
   planURL = blob ? URL.createObjectURL(blob) : null;
-  planImage = blob ? await chargerImage(blob) : null;
+  planImage = null;
+  if (blob) {
+    try { planImage = await chargerImage(blob); } catch { URL.revokeObjectURL(planURL); planURL = null; }
+  }
   scene?.majPotager({ largeur: etat.largeur, longueur: etat.longueur, image: planImage });
   render3D(); renderPlan(); majAccueil(); renderNiveau();
 }
@@ -420,6 +424,7 @@ function formulaire(existant, planteInitiale) {
         etat.plantations.push(nouvelle); etat.accueilVu = true;
         sauver(); fermerFeuille(); toutRafraichir();
         toast(`${PLANTE_PAR_ID[choix].emoji} +10 XP ! Place-la sur ton plan`, 'or');
+        vibrer('moyen');
         debutPlacement(nouvelle.id);
       }
     }
@@ -528,13 +533,14 @@ async function appliquerPosition(lat, lon, nom, altitude) {
   toutRafraichir(); chargerMeteo();
 }
 
-function localiser() {
-  if (!navigator.geolocation) { toast('😕 Localisation indisponible : cherche ta ville.', 'rouge'); return choisirLieu(); }
+async function localiser() {
   toast('📍 Recherche de ta position…');
-  navigator.geolocation.getCurrentPosition(
-    (pos) => appliquerPosition(pos.coords.latitude, pos.coords.longitude, 'Ma position', pos.coords.altitude ?? null),
-    () => { toast('😕 Position refusée : cherche ta ville à la place.', 'rouge'); choisirLieu(); },
-    { enableHighAccuracy: false, timeout: 15000, maximumAge: 3600000 });
+  try {
+    const { lat, lon, altitude } = await obtenirPosition();
+    await appliquerPosition(lat, lon, 'Ma position', altitude);
+  } catch {
+    toast('😕 Position indisponible : cherche ta ville à la place.', 'rouge'); choisirLieu();
+  }
 }
 
 function choisirLieu() {
@@ -579,7 +585,13 @@ function choisirLieu() {
 function renderReglages() {
   $('#r-nom').value = etat.nom; $('#r-largeur').value = etat.largeur; $('#r-longueur').value = etat.longueur;
   $('#nom-potager').textContent = etat.nom || 'Mon potager';
+  $('#r-notifs').checked = etat.notifs !== false;
+  $('#ligne-notifs').hidden = !NATIF;
 }
+$('#r-notifs').addEventListener('change', (e) => {
+  etat.notifs = e.target.checked; sauver(); programmerRappels();
+  toast(etat.notifs ? '🔔 Je te préviens quand une récolte est prête' : '🔕 Rappels de récolte coupés');
+});
 $('#r-nom').addEventListener('change', (e) => { etat.nom = e.target.value.trim() || 'Mon potager'; sauver(); renderReglages(); });
 for (const id of ['#r-largeur', '#r-longueur']) {
   $(id).addEventListener('change', async () => {
@@ -610,15 +622,7 @@ async function exporter() {
   telecharger(fichier, `mon-potager-${versISO(auj())}.json`);
 }
 
-async function telecharger(blob, nom) {
-  const fichier = new File([blob], nom, { type: blob.type });
-  if (navigator.canShare?.({ files: [fichier] })) {
-    try { await navigator.share({ files: [fichier], title: 'Mon Potager' }); return; } catch (e) { if (e.name === 'AbortError') return; }
-  }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = nom; document.body.appendChild(a); a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-}
+const telecharger = (blob, nom) => partagerFichier(blob, nom).catch(() => toast('😕 Impossible d\'enregistrer le fichier', 'rouge'));
 
 // ── Actions globales ────────────────────────────────────────────────────
 const ORDRE_FONDS = Object.keys(FONDS);
@@ -639,9 +643,13 @@ document.addEventListener('click', async (e) => {
     case 'detourer': detourer(false); break;
     case 'ajouter': formulaire(); break;
     case 'placement-fin': finPlacement(); break;
-    case 'etiquettes':
-      etat.etiquettes = !etat.etiquettes; sauver(); scene?.setEtiquettes(etat.etiquettes);
-      b.classList.toggle('off', !etat.etiquettes); break;
+    case 'etiquettes': {
+      const modes = ['auto', 'toutes', 'aucune'];
+      const noms = { auto: '🏷️ Étiquettes automatiques', toutes: '🏷️ Toutes les étiquettes', aucune: '🙈 Étiquettes masquées' };
+      etat.etiquettes = modes[(modes.indexOf(etat.etiquettes) + 1) % modes.length];
+      sauver(); scene?.setEtiquettes(etat.etiquettes);
+      b.classList.toggle('off', etat.etiquettes === 'aucune'); toast(noms[etat.etiquettes]); break;
+    }
     case 'tourner': {
       const on = !b.classList.contains('actif'); b.classList.toggle('actif', on); scene?.setAutoRotation(on); break;
     }
@@ -686,7 +694,28 @@ $('#niveau').addEventListener('click', () => {
     <div class="niveaux">${NIVEAUX.map(([s, t], i) => `<div class="niv${xp >= s ? ' atteint' : ''}"><span>${i + 1}</span>${t}<small>${s} XP</small></div>`).join('')}</div>`);
 });
 
+// Notifications locales le matin des récoltes estimées (appli Android / iPhone)
+let minuterieRappels = 0;
+function programmerRappels() {
+  if (!NATIF) return;
+  clearTimeout(minuterieRappels);
+  minuterieRappels = setTimeout(() => {
+    const rappels = etat.notifs === false ? [] : etat.plantations.map((p) => {
+      const { plante, recolte } = infos(p);
+      if (!plante || !recolte) return null;
+      const fleur = plante.cat === 'fleur';
+      return {
+        id: p.id, date: recolte,
+        titre: `${plante.emoji} ${fleur ? 'Floraison' : 'C\'est l\'heure de récolter'} !`,
+        texte: fleur ? `Tes ${plante.nom.toLowerCase()} devraient être en fleur. Va voir ton potager !` : `Ton ${plante.nom.toLowerCase()} planté le ${formatDate(p.date)} devrait être prêt.`,
+      };
+    }).filter(Boolean);
+    programmerRecoltes(rappels);
+  }, 800);
+}
+
 function toutRafraichir() {
+  programmerRappels();
   render3D(); renderPlan(); renderListe(); renderNiveau(); majAccueil();
   if ($('#vue-conseils').classList.contains('active')) renderConseils(); else renderLieu();
   if (meteo) renderMeteo();
@@ -699,8 +728,9 @@ async function demarrer() {
   scene = creerScene($('#scene'), { onSelect: (id) => { if (id) ficheplantation(id); } });
   if (scene) {
     scene.setFond(etat.fond);
+    if (typeof etat.etiquettes === 'boolean') etat.etiquettes = etat.etiquettes ? 'auto' : 'aucune';
     scene.setEtiquettes(etat.etiquettes);
-    $('[data-act="etiquettes"]').classList.toggle('off', !etat.etiquettes);
+    $('[data-act="etiquettes"]').classList.toggle('off', etat.etiquettes === 'aucune');
   }
   const blob = await lire('photoPlan');
   await appliquerPlan(blob || null);
@@ -708,7 +738,16 @@ async function demarrer() {
   renderNiveau(false);
   if (etat.lieu) chargerMeteo();
   document.body.classList.add('pret');
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  surNotificationTouchee((id) => { allerA('potager'); ficheplantation(id); });
+  surBoutonRetour(() => {
+    const det = document.querySelector('.detourage');
+    if (det) { det.querySelector('[data-act="annuler"]').click(); return true; }
+    if (!$('#feuille').hidden) { $('#feuille').onclick = null; $('#feuille').oninput = null; fermerFeuille(); return true; }
+    if (placement) { finPlacement(); return true; }
+    if (!$('#vue-visuel').classList.contains('active')) { allerA('visuel'); return true; }
+    return false;
+  });
+  if (!NATIF && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
 window.monPotager = { get etat() { return etat; } }; // pratique pour les tests

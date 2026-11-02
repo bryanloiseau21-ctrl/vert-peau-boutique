@@ -1,0 +1,19 @@
+{
+  "appId": "fr.monpotager.app",
+  "appName": "Mon Potager",
+  "webDir": "www",
+  "backgroundColor": "#eafbe7",
+  "ios": {
+    "contentInset": "never",
+    "scheme": "App"
+  },
+  "android": {
+    "backgroundColor": "#eafbe7"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#3fbf5f"
+    }
+  }
+}

@@ -69,6 +69,10 @@ jobs:
       - name: Ajouter Rempart des Runes
         run: cp -r rempart-des-runes/www bot-stages/app/rempart
 
+      # Mon Potager (potager en 3D + calendrier de plantation) publié sous /potager/
+      - name: Ajouter Mon Potager
+        run: cp -r mon-potager/www bot-stages/app/potager
+
       - name: Préparer l'appli
         if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         uses: actions/upload-pages-artifact@v3

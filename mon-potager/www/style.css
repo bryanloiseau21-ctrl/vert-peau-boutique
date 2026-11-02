@@ -80,6 +80,7 @@ main { position: fixed; inset: 0 0 var(--nav-h) 0; }
 .vue { position: absolute; inset: 0; display: none; }
 .vue.active { display: block; animation: apparait .25s ease; }
 @keyframes apparait { from { opacity: 0; transform: translateY(8px); } }
+.contenu > * { flex-shrink: 0; }
 .contenu {
   height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch;
   padding: calc(env(safe-area-inset-top) + 72px) 16px 28px;
@@ -207,6 +208,16 @@ main { position: fixed; inset: 0 0 var(--nav-h) 0; }
 .reglages summary { font-weight: 900; cursor: pointer; list-style: none; }
 .reglages summary::-webkit-details-marker { display: none; }
 .reglages[open] summary { margin-bottom: 12px; }
+.interrupteur { display: flex; align-items: center; gap: 10px; font-weight: 800; margin-top: 14px; cursor: pointer; }
+.interrupteur[hidden] { display: none; }
+.interrupteur input { position: absolute; opacity: 0; pointer-events: none; }
+.interrupteur span { flex: none; width: 50px; height: 30px; border-radius: 99px; background: var(--gris-fonce); position: relative; transition: background .2s; }
+.interrupteur span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: transform .2s; }
+.interrupteur input:checked + span { background: var(--vert); }
+.interrupteur input:checked + span::after { transform: translateX(20px); }
+.interrupteur input:focus-visible + span { outline: 3px solid var(--bleu); outline-offset: 2px; }
+.mentions { text-align: center; font-size: .82rem; color: var(--doux); margin: 14px 0 0; }
+.mentions a { color: var(--vert-fonce); font-weight: 800; }
 .reglages .btn-rouge { width: 100%; margin-top: 16px; }
 .champ { display: flex; flex-direction: column; gap: 6px; font-weight: 800; font-size: .85rem; color: var(--doux); flex: 1; margin-top: 10px; }
 .champ.petit { flex: 0 0 96px; }
