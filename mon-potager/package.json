@@ -10,7 +10,7 @@
     "test": "node --test tests/logique.test.js && node tests/ui.test.js",
     "test:logique": "node --test tests/logique.test.js",
     "icones": "node scripts/icones.js",
-    "assets": "capacitor-assets generate --android --ios --iconBackgroundColor '#7cc8ff' --splashBackgroundColor '#eafbe7' --splashBackgroundColorDark '#13241a'",
+    "assets": "capacitor-assets generate --android --ios --iconBackgroundColor '#14b8a6' --splashBackgroundColor '#eafbe7' --splashBackgroundColorDark '#13241a'",
     "captures": "node scripts/captures.js",
     "sync": "cap sync"
   },
