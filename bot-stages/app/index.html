@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Stages Info</title>
+  <meta name="description" content="Entreprises informatiques pour un stage aux Sables-d'Olonne">
+  <meta name="theme-color" content="#0b5c7a" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1b24" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Stages Info">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div>
+        <h1 id="titre">Entreprises</h1>
+        <p class="sous-titre" id="sous-titre">Stages informatique · Les Sables-d'Olonne</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Onglet Entreprises -->
+    <section id="vue-liste" class="vue active">
+      <div class="recherche">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Rechercher une entreprise, une ville…" autocomplete="off">
+      </div>
+      <div class="chips" id="filtres">
+        <button class="chip" data-f="email">✉️ E-mail</button>
+        <button class="chip" data-f="tel">📞 Téléphone</button>
+        <button class="chip" data-f="salaries">👥 Salariés</button>
+        <button class="chip" data-f="nouveau">🆕 Pas contactées</button>
+      </div>
+      <div class="barre-tri">
+        <span id="compteur"></span>
+        <select id="tri" aria-label="Trier">
+          <option value="score">Les plus pertinentes</option>
+          <option value="distance">Les plus proches</option>
+          <option value="nom">Nom A → Z</option>
+        </select>
+      </div>
+      <ul id="liste" class="liste"></ul>
+      <div id="vide" class="vide" hidden></div>
+    </section>
+
+    <!-- Onglet Suivi -->
+    <section id="vue-suivi" class="vue">
+      <div class="stats" id="stats"></div>
+      <h2 class="titre-section" id="titre-relances">À relancer</h2>
+      <ul id="relances" class="liste"></ul>
+      <h2 class="titre-section">Mes démarches</h2>
+      <ul id="demarches" class="liste"></ul>
+      <button class="bouton secondaire large" id="export">Exporter mon suivi (CSV)</button>
+    </section>
+
+    <!-- Onglet Profil -->
+    <section id="vue-profil" class="vue">
+      <p class="aide">Ces infos servent à pré-remplir tes e-mails de candidature. Elles restent sur ton téléphone.</p>
+      <form id="profil" class="formulaire">
+        <label>Prénom<input name="prenom" autocomplete="given-name"></label>
+        <label>Nom<input name="nom" autocomplete="family-name"></label>
+        <label>Formation / classe<input name="formation" placeholder="ex. BTS SIO 1re année"></label>
+        <label>Établissement<input name="ecole" placeholder="ex. Lycée … aux Sables-d'Olonne"></label>
+        <label>Dates du stage<input name="dates" placeholder="ex. du 5 au 30 janvier 2027"></label>
+        <label>Téléphone<input name="telephone" type="tel" autocomplete="tel"></label>
+        <label>Modèle d'e-mail
+          <textarea name="modele" rows="12"></textarea>
+        </label>
+        <p class="aide">Variables : {entreprise} {prenom} {nom} {formation} {ecole} {dates} {telephone}</p>
+        <button type="button" class="bouton secondaire" id="modele-defaut">Remettre le modèle par défaut</button>
+      </form>
+      <p class="aide" id="maj"></p>
+    </section>
+  </main>
+
+  <nav class="onglets" aria-label="Navigation">
+    <button class="onglet active" data-vue="liste">
+      <svg viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h2a2 2 0 0 1 2 2v10M2 21h20M8 7h4M8 11h4M8 15h4"/></svg>
+      <span>Entreprises</span>
+    </button>
+    <button class="onglet" data-vue="suivi">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>
+      <span>Suivi</span>
+    </button>
+    <button class="onglet" data-vue="profil">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+      <span>Profil</span>
+    </button>
+  </nav>
+
+  <!-- Fiche détaillée -->
+  <div id="voile" class="voile" hidden></div>
+  <div id="fiche" class="fiche" role="dialog" aria-modal="true" hidden>
+    <div class="poignee"></div>
+    <div id="fiche-contenu"></div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

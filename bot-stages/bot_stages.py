@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import math
 import sys
 import time
@@ -24,6 +25,8 @@ import urllib.request
 from dataclasses import dataclass, asdict, field
 from datetime import date
 from pathlib import Path
+
+import contacts
 
 API_URL = "https://recherche-entreprises.api.gouv.fr"
 
@@ -89,6 +92,13 @@ class Entreprise:
     distance_km: float | None
     date_creation: str
     dirigeants: str
+    enseigne: str = ""
+    latitude: float | None = None
+    longitude: float | None = None
+    site: str = ""
+    email: str = ""
+    telephone: str = ""
+    source_contact: str = ""
     score: int = 0
     liens: dict = field(default_factory=dict)
 
@@ -162,6 +172,10 @@ def calculer_score(e: Entreprise) -> int:
         score += 10
     if e.distance_km is not None:
         score += max(0, 20 - int(e.distance_km))
+    if e.email:
+        score += 10
+    if e.telephone:
+        score += 5
     return score
 
 
@@ -173,6 +187,17 @@ def construire_liens(nom: str, commune: str, siren: str) -> dict:
         "linkedin": f"https://www.linkedin.com/search/results/companies/?keywords={urllib.parse.quote(nom)}",
         "annuaire": f"https://annuaire-entreprises.data.gouv.fr/entreprise/{siren}",
     }
+
+
+def _float(v) -> float | None:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def normaliser_simple(t: str) -> str:
+    return contacts.normaliser(t).replace(" ", "")
 
 
 def convertir(resultat: dict, lat0: float, lon0: float) -> list[Entreprise]:
@@ -196,6 +221,10 @@ def convertir(resultat: dict, lat0: float, lon0: float) -> list[Entreprise]:
             or "NN"
         )
         lib_eff, eff_min = TRANCHES_EFFECTIF.get(tranche, ("Non renseigné", None))
+        enseignes = [x for x in (et.get("liste_enseignes") or []) if x]
+        enseigne = et.get("nom_commercial") or (enseignes[0] if enseignes else "")
+        if enseigne and enseigne.isupper():
+            enseigne = enseigne.title()
         fiche = Entreprise(
             siren=resultat.get("siren", ""),
             siret=et.get("siret", ""),
@@ -210,9 +239,12 @@ def convertir(resultat: dict, lat0: float, lon0: float) -> list[Entreprise]:
             distance_km=distance_km(lat0, lon0, et.get("latitude"), et.get("longitude")),
             date_creation=et.get("date_creation") or resultat.get("date_creation") or "",
             dirigeants=dirigeants,
+            enseigne=enseigne if normaliser_simple(enseigne) != normaliser_simple(nom) else "",
+            latitude=_float(et.get("latitude")),
+            longitude=_float(et.get("longitude")),
         )
         fiche.score = calculer_score(fiche)
-        fiche.liens = construire_liens(fiche.nom, fiche.commune, fiche.siren)
+        fiche.liens = construire_liens(fiche.enseigne or fiche.nom, fiche.commune, fiche.siren)
         fiches.append(fiche)
     return fiches
 
@@ -249,9 +281,9 @@ def rechercher(rayon_km: float, codes_naf: list[str], lat: float, lon: float) ->
 # --------------------------------------------------------------------------- #
 # Exports
 # --------------------------------------------------------------------------- #
-COLONNES_CSV = ["score", "nom", "activite", "code_naf", "effectif", "adresse", "code_postal",
+COLONNES_CSV = ["score", "nom", "enseigne", "email", "telephone", "site", "activite", "code_naf", "effectif", "adresse", "code_postal",
                 "commune", "distance_km", "date_creation", "dirigeants", "siren", "siret",
-                "lien_google", "lien_maps", "lien_linkedin", "lien_annuaire",
+                "source_contact", "lien_google", "lien_maps", "lien_linkedin", "lien_annuaire",
                 "contacte", "date_contact", "reponse", "notes"]
 
 
@@ -262,7 +294,8 @@ def exporter_csv(entreprises: list[Entreprise], chemin: Path) -> None:
         for e in entreprises:
             d = asdict(e)
             liens = d.pop("liens")
-            d.pop("effectif_min")
+            for k in ("effectif_min", "latitude", "longitude"):
+                d.pop(k)
             d.update({f"lien_{k}": v for k, v in liens.items()})
             d.update({"contacte": "", "date_contact": "", "reponse": "", "notes": ""})
             w.writerow(d)
@@ -278,16 +311,18 @@ def exporter_markdown(entreprises: list[Entreprise], chemin: Path, rayon: float)
         "Score : plus il est élevé, plus l'entreprise est susceptible d'accueillir un "
         "stagiaire (taille, activité, proximité).",
         "",
-        "| # | Score | Entreprise | Activité | Effectif | Commune | Distance | Liens |",
-        "|---|------:|------------|----------|----------|---------|---------:|-------|",
+        "| # | Score | Entreprise | Contact | Activité | Effectif | Commune | Distance | Liens |",
+        "|---|------:|------------|---------|----------|----------|---------|---------:|-------|",
     ]
     for i, e in enumerate(entreprises, 1):
         dist = f"{e.distance_km:g} km" if e.distance_km is not None else "?"
         liens = (f"[Google]({e.liens['google']}) · [Plan]({e.liens['maps']}) · "
                  f"[LinkedIn]({e.liens['linkedin']}) · [Fiche]({e.liens['annuaire']})")
-        nom = e.nom.replace("|", "/")
-        lignes.append(f"| {i} | {e.score} | **{nom}** | {e.activite} | {e.effectif} | "
-                      f"{e.commune} | {dist} | {liens} |")
+        nom = (e.enseigne or e.nom).replace("|", "/")
+        contact = "<br>".join(filter(None, [e.email, e.telephone,
+                                            f"[site]({e.site})" if e.site else ""])) or "—"
+        lignes.append(f"| {i} | {e.score} | **{nom}** | {contact} | {e.activite} | "
+                      f"{e.effectif} | {e.commune} | {dist} | {liens} |")
     lignes += [
         "",
         "## Conseils pour candidater",
@@ -302,6 +337,16 @@ def exporter_markdown(entreprises: list[Entreprise], chemin: Path, rayon: float)
     chemin.write_text("\n".join(lignes), encoding="utf-8")
 
 
+def exporter_json(entreprises: list[Entreprise], chemin: Path, rayon: float) -> None:
+    donnees = {
+        "genere_le": date.today().isoformat(),
+        "rayon_km": rayon,
+        "centre": {"lat": LAT_SABLES, "lon": LON_SABLES, "nom": "Les Sables-d'Olonne"},
+        "entreprises": [{k: v for k, v in asdict(e).items()} for e in entreprises],
+    }
+    chemin.write_text(json.dumps(donnees, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Trouve des entreprises informatiques pour un "
                                             "stage autour des Sables-d'Olonne.")
@@ -311,6 +356,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--sans-commerce", action="store_true",
                    help="exclure commerce, télécoms et agences de pub (garde le cœur informatique)")
     p.add_argument("--sortie", default="resultats", help="dossier de sortie")
+    p.add_argument("--sans-contacts", action="store_true",
+                   help="ne pas chercher e-mails / téléphones / sites (plus rapide)")
+    p.add_argument("--max-recherches", type=int, default=int(os.environ.get("MAX_RECHERCHES", 300)),
+                   help="nombre max d'entreprises à rechercher sur le web par lancement")
     p.add_argument("--lat", type=float, default=LAT_SABLES)
     p.add_argument("--lon", type=float, default=LON_SABLES)
     args = p.parse_args(argv)
@@ -332,12 +381,22 @@ def main(argv: list[str] | None = None) -> int:
 
     sortie = Path(args.sortie)
     sortie.mkdir(parents=True, exist_ok=True)
+
+    if not args.sans_contacts:
+        contacts.enrichir(entreprises, sortie / "cache_contacts.json", args.lat, args.lon,
+                          rayon, max_recherches=args.max_recherches)
+        for e in entreprises:
+            e.score = calculer_score(e)
+        entreprises.sort(key=lambda e: (-e.score, e.distance_km or 999, e.nom))
+
     exporter_csv(entreprises, sortie / "entreprises_stage.csv")
     exporter_markdown(entreprises, sortie / "entreprises_stage.md", rayon)
+    exporter_json(entreprises, sortie / "entreprises.json", rayon)
 
     print(f"✅ {len(entreprises)} établissements retenus.")
     for e in entreprises[:10]:
-        print(f"   [{e.score:>3}] {e.nom} — {e.commune} ({e.effectif})")
+        print(f"   [{e.score:>3}] {e.enseigne or e.nom} — {e.commune} ({e.effectif}) "
+              f"{e.email} {e.telephone}")
     print(f"📄 Résultats : {sortie / 'entreprises_stage.csv'} et {sortie / 'entreprises_stage.md'}")
     return 0
 

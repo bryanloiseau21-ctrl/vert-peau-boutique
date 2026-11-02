@@ -46,7 +46,7 @@ def test_recherche_filtre_trie_et_deduplique():
 
 def test_main_ecrit_csv_et_markdown(tmp_path):
     with mock.patch.object(bot, "appeler_api", side_effect=fake_api):
-        code = bot.main(["--sortie", str(tmp_path), "--min-salaries", "3"])
+        code = bot.main(["--sortie", str(tmp_path), "--min-salaries", "3", "--sans-contacts"])
     assert code == 0
     with (tmp_path / "entreprises_stage.csv").open(encoding="utf-8-sig") as f:
         lignes = list(csv.DictReader(f, delimiter=";"))
@@ -54,6 +54,7 @@ def test_main_ecrit_csv_et_markdown(tmp_path):
     assert lignes[0]["lien_annuaire"].endswith("/111111111")
     md = (tmp_path / "entreprises_stage.md").read_text(encoding="utf-8")
     assert "**Web Ocean**" in md
+    assert (tmp_path / "entreprises.json").exists()
 
 
 def test_distance():
