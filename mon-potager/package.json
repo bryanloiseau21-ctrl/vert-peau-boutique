@@ -1,0 +1,16 @@
+{
+  "name": "mon-potager",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mon Potager : visuel 3D de ton potager à partir d'une photo, dates de plantation et conseils selon la saison et l'endroit.",
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes serve www -l 8080",
+    "vendor": "node scripts/vendor-three.js",
+    "test": "node --test tests/logique.test.js && node tests/ui.test.js",
+    "test:logique": "node --test tests/logique.test.js"
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  }
+}

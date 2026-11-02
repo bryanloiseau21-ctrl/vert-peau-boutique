@@ -1,0 +1,17 @@
+{
+  "name": "Mon Potager",
+  "short_name": "Potager",
+  "description": "Ton potager en 3D à partir d'une photo, avec les dates de plantation et les conseils du mois selon ta région.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eafbe7",
+  "theme_color": "#3fbf5f",
+  "lang": "fr",
+  "categories": ["lifestyle", "utilities"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
