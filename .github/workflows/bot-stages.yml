@@ -1,0 +1,35 @@
+name: Bot stages informatique
+
+on:
+  workflow_dispatch:
+    inputs:
+      rayon:
+        description: "Rayon de recherche en km (max 50)"
+        default: "15"
+      min_salaries:
+        description: "Effectif minimal (0 = tout)"
+        default: "0"
+  schedule:
+    - cron: "17 6 * * 1"  # chaque lundi matin
+
+jobs:
+  recherche:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Tests
+        working-directory: bot-stages
+        run: pip install pytest && python -m pytest -q tests
+      - name: Lancer le bot
+        working-directory: bot-stages
+        run: |
+          python bot_stages.py --rayon "${{ github.event.inputs.rayon || '15' }}" \
+                               --min-salaries "${{ github.event.inputs.min_salaries || '0' }}"
+          cat resultats/entreprises_stage.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: resultats-stages
+          path: bot-stages/resultats/
