@@ -34,6 +34,16 @@ Workflow **Veilleur – App Store** (onglet Actions → Run workflow) : compile 
 Il faut un compte Apple Developer et les secrets `APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` (les mêmes que pour Boost Étudiant et Rempart des Runes, voir `aides-etudiants/PUBLIER.md`).
 Avant le premier envoi, crée l'appli dans App Store Connect avec l'identifiant `fr.veilleur.coach`. Ensuite, installe **TestFlight** sur l'iPhone et accepte l'invitation.
 
+## Installer sur le téléphone (comme Boost Étudiant)
+
+Le workflow **Bot stages informatique** publie aussi Veilleur sur le site GitHub Pages du dépôt :
+`https://bryanloiseau21-ctrl.github.io/vert-peau-boutique/veilleur/`
+
+- **iPhone (Safari)** : bouton Partager → **Sur l'écran d'accueil**.
+- **Android (Chrome)** : menu ⋮ → **Installer l'application**.
+
+Elle marche ensuite hors connexion. Pour l'analyse des photos de repas, colle ta clé API Claude dans Profil.
+
 ## Installer l'appli sur Android
 
 Chaque modification poussée lance le workflow **Veilleur – Android** :

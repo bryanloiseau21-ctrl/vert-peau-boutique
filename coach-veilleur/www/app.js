@@ -987,3 +987,8 @@ app.addEventListener('change', ev => {
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.run) garderEcran(true); });
 
 render();
+
+// Appli web installée (écran d'accueil) : fonctionne hors connexion. Pas dans l'appli native ni dans claude.ai.
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !window.Capacitor && location.hostname.endsWith('github.io')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}

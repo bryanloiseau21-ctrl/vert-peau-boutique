@@ -9,7 +9,9 @@
     "test": "node --test tests/coach.test.js tests/nutrition.test.js && node tests/ui.test.js",
     "test:logique": "node --test tests/coach.test.js tests/nutrition.test.js",
     "anthropic": "node scripts/vendor-anthropic.js",
-    "sync": "cap sync"
+    "sync": "cap sync",
+    "icones": "node scripts/icones.js",
+    "assets": "capacitor-assets generate --android --ios --iconBackgroundColor '#050607' --splashBackgroundColor '#050607'"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
