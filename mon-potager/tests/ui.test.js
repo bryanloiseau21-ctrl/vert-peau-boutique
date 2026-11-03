@@ -28,7 +28,7 @@ const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--ena
 const ctx = await browser.newContext({ ...devices['iPhone 13'], locale: 'fr-FR', timezoneId: 'Europe/Paris' });
 const page = await ctx.newPage();
 const erreurs = [];
-page.on('pageerror', (e) => erreurs.push(e.message));
+page.on('pageerror', (e) => erreurs.push(e.stack || e.message));
 page.on('console', (m) => { if (m.type() === 'error') erreurs.push(m.text()); });
 // Pas d'Internet pendant les tests : météo et recherche de ville répondent avec des données fictives.
 await ctx.route(/open-meteo\.com/, (route) => {
