@@ -1039,11 +1039,11 @@ export function creerScene(conteneur, { onSelect, onDecor, onDeplace, onInstalla
     }
     if (u.attente > 0) { u.attente -= dt; u.jambeG.rotation.x = u.jambeD.rotation.x = u.brasG.rotation.x = u.brasD.rotation.x = 0; u.tete.rotation.y = Math.sin(t) * 0.4; return; }
     if (!u.cible) {
-      const ids = Object.keys(jardin.places);
       const lim = Math.max(1.5, R - 1.2);
       let x, z;
-      if (ids.length && Math.random() < 0.7) { // va voir une installation
-        const b = jardin.bacs.find((q) => q.id === ids[Math.floor(Math.random() * ids.length)]); const p = jardin.places[b.id];
+      const b = jardin.bacs[Math.floor(Math.random() * jardin.bacs.length)];
+      const p = b && jardin.places[b.id];
+      if (p && Math.random() < 0.7) { // va voir une installation
         const cote = Math.random() < 0.5 ? 1 : -1;
         x = p.x + (Math.random() - 0.5) * b.largeur; z = p.z + cote * (b.longueur / 2 + 0.7);
       } else { const a = Math.random() * Math.PI * 2, d = Math.random() * lim; x = Math.cos(a) * d; z = Math.sin(a) * d; }
@@ -1175,8 +1175,8 @@ export function creerScene(conteneur, { onSelect, onDecor, onDeplace, onInstalla
       }
       const dir = camera.position.clone().sub(controles.target).setY(0).normalize();
       if (!dir.lengthSq()) dir.set(0, 0, 1);
-      const dist = Math.max(3, taille * 1.5);
-      volVers(centre, centre.clone().add(dir.multiplyScalar(dist)).setY(centre.y + dist * 0.7));
+      const dist = Math.max(3.5, taille * 1.9);
+      volVers(centre, centre.clone().add(dir.multiplyScalar(dist)).setY(centre.y + dist * 0.8));
     },
     majPerso(p) {
       const ancien = perso;

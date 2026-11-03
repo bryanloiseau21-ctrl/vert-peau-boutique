@@ -35,6 +35,8 @@ npm run dev        # puis ouvre http://localhost:8080
   - 🌳 arbres et vergers (17 espèces, dont 11 fruitiers) qui fleurissent et portent leurs fruits en 3D selon le mois ;
   - 🏝️ taille du terrain réglable pour avoir de la place.
   - ✋ mode Déplacer : on attrape une installation en 3D et on la pose où on veut (ou 🔄 rangement automatique) ;
+  - 🏠 une maison (chalet bois, pierre, brique, crépi ; couleurs des murs et du toit) et 🧑‍🌾 un personnage entièrement personnalisable qui se promène et fait coucou ;
+  - 🔍 zoom animé sur chaque installation, et une animation à chaque toucher (rebond, saut, feuilles, cœurs, étincelles) ;
   - 🪓 on coupe les arbres du décor pour faire de la place et récolter des bûches 🪵, qui servent ensuite à construire en bois (bacs, bordures, clôtures, abris).
 - **Côté jeu** : niveau de jardinier et XP (plantations, nouvelles espèces, catégories, photo, région), confettis au passage de niveau.
 - **Natif (Android / iPhone)** : 🔔 notification le matin de chaque récolte estimée, 📤 partage de l'image 3D, 📳 vibrations, 📍 GPS, bouton retour Android.

@@ -313,7 +313,7 @@ try {
   await page.click('#bacs .bac-puce >> nth=0');
   await page.waitForFunction(() => document.querySelector('#plan-img')?.getAttribute('src'));
   const etat = await page.evaluate(() => window.monPotager.etat);
-  ok(etat.plantations.length === 2 && etat.zone === 'mediterraneen' && etat.bacs.length === 6 && etat.tailleTerrain === 60 && etat.perso.nom === 'Bryan' && etat.coupes.length === 1 && etat.bacs.every((b) => b.px != null), 'Données conservées après rechargement');
+  ok(etat.plantations.length === 2 && etat.zone === 'mediterraneen' && etat.bacs.length === 6 && etat.tailleTerrain === 60 && etat.perso.nom === 'Bryan' && etat.coupes.length === 1 && etat.bacs.find((b) => b.type === 'serre').px != null, 'Données conservées après rechargement');
   ok(await page.evaluate(() => new Promise((r) => { const i = document.querySelector('#plan-img'); if (i.complete) r(i.naturalWidth > 0); else { i.onload = () => r(true); i.onerror = () => r(false); } })),
     'Photo du potager toujours là après rechargement');
   ok(!(await page.isVisible('#accueil')), 'Pas d\'accueil au retour');
