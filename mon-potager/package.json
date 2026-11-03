@@ -1,0 +1,33 @@
+{
+  "name": "mon-potager",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mon Potager : visuel 3D de ton potager à partir d'une photo, dates de plantation et conseils selon la saison et l'endroit.",
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes serve www -l 8080",
+    "vendor": "node scripts/vendor-three.js",
+    "test": "node --test tests/logique.test.js && node tests/ui.test.js",
+    "test:logique": "node --test tests/logique.test.js",
+    "icones": "node scripts/icones.js",
+    "assets": "capacitor-assets generate --android --ios --iconBackgroundColor '#14b8a6' --splashBackgroundColor '#eafbe7' --splashBackgroundColorDark '#13241a'",
+    "captures": "node scripts/captures.js",
+    "sync": "cap sync"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/geolocation": "^8.2.4",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.6.0",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/share": "^8.0.3",
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.0"
+  }
+}

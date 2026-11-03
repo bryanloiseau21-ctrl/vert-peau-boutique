@@ -1,0 +1,38 @@
+# Vérifie Mon Potager à chaque modification : logique (calendrier, climat, récoltes) et parcours complet dans un navigateur.
+name: Mon Potager – tests
+
+on:
+  push:
+    paths: ["mon-potager/**", ".github/workflows/potager-*.yml"]
+  pull_request:
+    paths: ["mon-potager/**", ".github/workflows/potager-*.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: mon-potager
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mon-potager/package-lock.json
+      - run: npm ci
+      - name: Logique (calendrier, climat, récoltes, détourage)
+        run: npm run test:logique
+      - name: Three.js intégré à jour
+        run: npm run vendor && git diff --exit-code -- www/vendor
+      - name: Navigateur de test
+        run: npm install --no-save playwright@1 && npx playwright install --with-deps chromium
+      - name: Parcours complet (iPhone)
+        run: node tests/ui.test.js

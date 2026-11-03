@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mon Potager</title>
+  <meta name="description" content="Ton potager en 3D à partir d'une photo, avec les dates de plantation et les conseils du mois selon ta région.">
+  <meta name="theme-color" content="#3fbf5f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mon Potager">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body data-vue="visuel">
+  <header class="entete">
+    <div class="logo"><span class="logo-emoji">🌻</span><span id="nom-potager">Mon potager</span></div>
+    <button class="niveau" id="niveau" aria-label="Mon niveau de jardinier">
+      <span class="niveau-num" id="niveau-num">1</span>
+      <span class="niveau-info"><b id="niveau-titre">Petite graine</b><span class="xp"><span id="xp-barre"></span></span></span>
+    </button>
+  </header>
+
+  <main>
+    <!-- ── Visuel 3D ── -->
+    <section class="vue active" id="vue-visuel" aria-label="Visuel 3D">
+      <div class="scene" id="scene"></div>
+      <div class="hud-haut">
+        <div class="pastille-info" id="info-compte">🌱 0 plantation</div>
+        <div class="pastille-info jaune" id="info-recolte" hidden></div>
+      </div>
+      <div class="barre-outils">
+        <button class="rond" data-act="photo" title="Photo du potager" aria-label="Photo du potager">📷</button>
+        <button class="rond" data-act="etiquettes" title="Étiquettes" aria-label="Afficher ou masquer les étiquettes">🏷️</button>
+        <button class="rond" data-act="tourner" title="Rotation automatique" aria-label="Rotation automatique">🔄</button>
+        <button class="rond" data-act="fond" title="Changer le fond" aria-label="Changer le fond">🎨</button>
+        <button class="rond" data-act="recentrer" title="Recentrer" aria-label="Recentrer la vue">🎯</button>
+        <button class="rond" data-act="capture" title="Enregistrer l'image" aria-label="Enregistrer l'image">📸</button>
+      </div>
+      <p class="astuce" id="astuce-3d">👆 Glisse pour tourner autour · 🤏 pince pour zoomer · touche une plante</p>
+      <div class="accueil" id="accueil" hidden>
+        <div class="carte accueil-carte">
+          <div class="accueil-emoji">🏝️</div>
+          <h1>Bienvenue dans ton potager !</h1>
+          <p>Prends une photo de ton potager : l'appli le détoure et le pose sur une petite île en 3D autour de laquelle tu peux tourner.</p>
+          <button class="btn btn-vert gros" data-act="photo">📷 Prendre une photo</button>
+          <button class="btn btn-gris" data-act="sans-photo">✨ Essayer sans photo</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Mon potager : plan + plantations ── -->
+    <section class="vue" id="vue-potager" aria-label="Mon potager">
+      <div class="contenu">
+        <div class="bandeau-placement" id="bandeau-placement" hidden>
+          <span id="placement-texte">Touche le plan pour placer ta plante</span>
+          <button class="btn btn-mini" data-act="placement-fin">Plus tard</button>
+        </div>
+        <div class="carte carte-plan">
+          <div class="plan" id="plan"><img id="plan-img" alt="Plan de mon potager vu du dessus"><div id="plan-marqueurs"></div></div>
+          <div class="rangee">
+            <button class="btn btn-gris" data-act="photo">📷 Photo</button>
+            <button class="btn btn-gris" data-act="detourer" id="btn-detourer">✂️ Détourage</button>
+          </div>
+        </div>
+        <button class="btn btn-vert gros large" data-act="ajouter">➕ Ajouter une plantation</button>
+        <div class="filtres" id="filtres"></div>
+        <div id="liste-plantations" class="liste"></div>
+        <details class="carte reglages">
+          <summary>⚙️ Réglages du potager</summary>
+          <label class="champ">Nom du potager <input id="r-nom" maxlength="30"></label>
+          <div class="rangee">
+            <label class="champ">↔️ Largeur (m) <input id="r-largeur" type="number" min="0.3" max="100" step="0.1"></label>
+            <label class="champ">↕️ Longueur (m) <input id="r-longueur" type="number" min="0.3" max="100" step="0.1"></label>
+          </div>
+          <label class="interrupteur" id="ligne-notifs"><input type="checkbox" id="r-notifs"><span></span>🔔 Me prévenir quand une récolte est prête</label>
+          <div class="rangee">
+            <button class="btn btn-gris" data-act="exporter">💾 Sauvegarder</button>
+            <label class="btn btn-gris">📂 Restaurer<input type="file" id="importer" accept="application/json,.json" hidden></label>
+          </div>
+          <button class="btn btn-rouge" data-act="reinitialiser">🗑️ Tout effacer</button>
+          <p class="mentions"><a href="confidentialite.html">🔒 Confidentialité</a> · Météo : <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a></p>
+        </details>
+      </div>
+    </section>
+
+    <!-- ── Conseils ── -->
+    <section class="vue" id="vue-conseils" aria-label="Conseils de plantation">
+      <div class="contenu">
+        <div class="carte lieu" id="carte-lieu"></div>
+        <div class="carte meteo" id="carte-meteo" hidden></div>
+        <div class="mois-nav">
+          <button class="rond petit" data-act="mois-prec" aria-label="Mois précédent">◀</button>
+          <div class="mois-titre"><b id="mois-nom">Novembre</b><span id="mois-saison">🍂 Automne</span></div>
+          <button class="rond petit" data-act="mois-suiv" aria-label="Mois suivant">▶</button>
+        </div>
+        <div class="carte travaux"><h3>🧑‍🌾 Au potager ce mois-ci</h3><ul id="travaux"></ul></div>
+        <div id="recos"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="onglets" aria-label="Navigation">
+    <button class="onglet active" data-vue="visuel"><span>🏝️</span>Visuel</button>
+    <button class="onglet" data-vue="potager"><span>🧺</span>Mon potager</button>
+    <button class="onglet" data-vue="conseils"><span>📅</span>Conseils</button>
+  </nav>
+
+  <input type="file" id="fichier-photo" accept="image/*" hidden>
+
+  <!-- Fiche (plantation ou plante) -->
+  <div class="voile" id="voile" hidden></div>
+  <div class="feuille" id="feuille" hidden role="dialog" aria-modal="true"></div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
