@@ -55,6 +55,8 @@ export const ETAT_DEFAUT = () => ({
   nom: 'Mon potager',
   bacs: [], // bacs, serres et enclos : { id, type, nom, largeur, longueur, hauteur, materiau, couleur, coins, animal, nombre, cabane }
   bacActif: null,
+  bois: 0, // bûches récoltées en coupant des arbres
+  coupes: [], // arbres du décor déjà coupés
   lieu: null, // { nom, lat, lon, altitude }
   zone: 'oceanique',
   hemisphere: 'nord',

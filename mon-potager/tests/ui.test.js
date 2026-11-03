@@ -207,9 +207,46 @@ try {
   await page.waitForTimeout(1200);
   await capture(page, '15-grand-terrain');
 
+  // Couper un arbre du décor, puis construire un bac avec le bois
+  await page.click('.onglet[data-vue="visuel"]');
+  const cle = await page.evaluate(() => window.monPotager.arbres()[0]);
+  ok(!!cle, 'Des arbres du décor à couper');
+  page.evaluate((c) => window.monPotager.couper(c), cle);
+  await page.waitForSelector('.dialogue [data-rep="oui"]');
+  await page.click('.dialogue [data-rep="oui"]');
+  await page.waitForTimeout(1800);
+  let e2 = await page.evaluate(() => window.monPotager.etat);
+  ok(e2.bois >= 2 && e2.coupes.includes(cle), `Arbre coupé : ${e2.bois} bûches`);
+  ok(!(await page.evaluate((c) => window.monPotager.arbres().includes(c), cle)), 'L\'arbre a disparu du décor');
+  await capture(page, '16-arbre-coupe');
+  const boisAvant = e2.bois;
+  await page.click('#info-bois');
+  await page.click('[data-construire="bac"]');
+  await page.waitForSelector('#e-bois');
+  await page.click('[data-act="enregistrer-bac"]');
+  await page.waitForTimeout(400);
+  e2 = await page.evaluate(() => window.monPotager.etat);
+  ok(e2.bois < boisAvant && e2.bacs.at(-1).materiau === 'bois', `Bac en bois construit avec ${boisAvant - e2.bois} bûches`);
+
+  // Déplacer une installation au doigt
+  await page.click('[data-act="deplacer-mode"]');
+  ok(await page.isVisible('#bandeau-deplacer'), 'Mode déplacer activé');
+  const idSerre = serre.id;
+  const avant = await page.evaluate((id) => window.monPotager.ecran(id), idSerre);
+  await page.mouse.move(avant.x, avant.y); await page.mouse.down();
+  await page.mouse.move(avant.x - 60, avant.y + 50, { steps: 10 }); await page.mouse.up();
+  await page.waitForTimeout(500);
+  const s2 = await page.evaluate((id) => window.monPotager.etat.bacs.find((b) => b.id === id), idSerre);
+  ok(s2.px != null && s2.pz != null, `Serre déplacée en (${s2.px} ; ${s2.pz})`);
+  const fige = await page.evaluate(() => window.monPotager.etat.bacs.every((b) => b.px != null));
+  ok(fige, 'Les autres installations gardent leur place');
+  await capture(page, '17-deplacement');
+  await page.click('[data-act="deplacer-fin"]');
+
   // Planter en serre : le calendrier change
   await page.click('.onglet[data-vue="potager"]');
-  ok(await page.locator('#bacs .bac-puce').count() === 4, '4 éléments dans le jardin');
+  ok(await page.locator('#bacs .bac-puce').count() === 5, '5 éléments dans le jardin');
+  await page.click(`[data-bac="${enclos.id}"]`);
   ok(!(await page.isVisible('#carte-plan')) && await page.isVisible('#carte-enclos'), 'Fiche de l\'enclos affichée');
   await page.click(`[data-bac="${serre.id}"]`);
   await page.click('[data-act="ajouter"]');
@@ -234,7 +271,7 @@ try {
   await page.click('#bacs .bac-puce >> nth=0');
   await page.waitForFunction(() => document.querySelector('#plan-img')?.getAttribute('src'));
   const etat = await page.evaluate(() => window.monPotager.etat);
-  ok(etat.plantations.length === 2 && etat.zone === 'mediterraneen' && etat.bacs.length === 4 && etat.tailleTerrain === 60, 'Données conservées après rechargement');
+  ok(etat.plantations.length === 2 && etat.zone === 'mediterraneen' && etat.bacs.length === 5 && etat.tailleTerrain === 60 && etat.coupes.length === 1 && etat.bacs.every((b) => b.px != null), 'Données conservées après rechargement');
   ok(await page.evaluate(() => new Promise((r) => { const i = document.querySelector('#plan-img'); if (i.complete) r(i.naturalWidth > 0); else { i.onload = () => r(true); i.onerror = () => r(false); } })),
     'Photo du potager toujours là après rechargement');
   ok(!(await page.isVisible('#accueil')), 'Pas d\'accueil au retour');

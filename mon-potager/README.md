@@ -34,6 +34,8 @@ npm run dev        # puis ouvre http://localhost:8080
   - 🐔 enclos à animaux (poules, canards, lapins, moutons, chèvres, cochons, ruches) avec clôture, abri et animaux qui se baladent en 3D ;
   - 🌳 arbres et vergers (17 espèces, dont 11 fruitiers) qui fleurissent et portent leurs fruits en 3D selon le mois ;
   - 🏝️ taille du terrain réglable pour avoir de la place.
+  - ✋ mode Déplacer : on attrape une installation en 3D et on la pose où on veut (ou 🔄 rangement automatique) ;
+  - 🪓 on coupe les arbres du décor pour faire de la place et récolter des bûches 🪵, qui servent ensuite à construire en bois (bacs, bordures, clôtures, abris).
 - **Côté jeu** : niveau de jardinier et XP (plantations, nouvelles espèces, catégories, photo, région), confettis au passage de niveau.
 - **Natif (Android / iPhone)** : 🔔 notification le matin de chaque récolte estimée, 📤 partage de l'image 3D, 📳 vibrations, 📍 GPS, bouton retour Android.
 - **Données** : tout reste sur le téléphone (IndexedDB). La météo, l'altitude et la recherche de ville utilisent [Open-Meteo](https://open-meteo.com) (gratuit, sans compte) ; sans connexion, on choisit son climat à la main.

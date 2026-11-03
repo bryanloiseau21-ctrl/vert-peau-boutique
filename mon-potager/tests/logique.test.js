@@ -122,6 +122,10 @@ test('disposition des bacs sur l\'île', () => {
   }
   assert.ok(rayon > 3 && rayon < 10);
   assert.deepEqual(disposerBacs([{ id: 'x', largeur: 4, longueur: 2 }]).places.x, { x: 0, z: 0 });
+  // une installation déplacée à la main garde sa place
+  const d = disposerBacs([{ id: 'x', largeur: 2, longueur: 2, px: 10, pz: -3 }, { id: 'y', largeur: 1, longueur: 1 }]);
+  assert.deepEqual(d.places.x, { x: 10, z: -3 });
+  assert.ok(d.rayon >= Math.hypot(11, 4) - 1e-9);
 });
 
 test('estimation de la récolte', () => {

@@ -183,6 +183,7 @@ export function disposerBacs(bacs, allee = 1) {
   let rayon = 0;
   for (const b of bacs) {
     const p = places[b.id]; p.x -= cx; p.z -= cz;
+    if (b.px != null && b.pz != null) { p.x = b.px; p.z = b.pz; } // placé à la main
     for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
       rayon = Math.max(rayon, Math.hypot(p.x + (sx * b.largeur) / 2, p.z + (sz * b.longueur) / 2));
     }

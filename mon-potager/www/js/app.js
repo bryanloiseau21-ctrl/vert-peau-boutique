@@ -164,7 +164,7 @@ function calculerXP() {
   const especes = new Set(pl.map((p) => p.plante));
   const cats = new Set(pl.map((p) => PLANTE_PAR_ID[p.plante]?.cat));
   const bonus = etat.bacs.reduce((s, b, i) => s + (b.type === 'enclos' ? 25 : b.type === 'arbre' ? 20 : i ? 15 : 0), 0);
-  return pl.length * 10 + especes.size * 15 + cats.size * 20 + (aUnePhoto() ? 20 : 0) + (etat.lieu ? 15 : 0) + bonus;
+  return pl.length * 10 + especes.size * 15 + cats.size * 20 + (aUnePhoto() ? 20 : 0) + (etat.lieu ? 15 : 0) + bonus + (etat.coupes?.length || 0) * 5;
 }
 function renderNiveau(feter = true) {
   const xp = calculerXP();
@@ -220,7 +220,7 @@ function majAccueil() {
 // ── Photo et détourage (une photo par bac) ──────────────────────────────
 function majJardin() {
   scene?.majJardin(etat.bacs.map((b) => ({ ...b, image: images[b.id]?.image || null, saison: b.type === 'arbre' ? saisonArbre(b) : null })),
-    { taille: etat.tailleTerrain || 0 });
+    { taille: etat.tailleTerrain || 0, coupes: etat.coupes || [] });
 }
 
 async function appliquerPlan(id, blob) {
@@ -347,7 +347,8 @@ function renderArbres(b) {
     ${infosArbreHTML(b)}
     <h3>📝 Planter un arbre, les étapes</h3>
     <ol class="etapes">${ETAPES_ARBRE.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>
-    <div class="rangee"><button class="btn btn-gris" data-act="editer-bac" data-bac="${b.id}">✏️ Modifier</button></div>`;
+    <div class="rangee"><button class="btn btn-gris" data-act="editer-bac" data-bac="${b.id}">✏️ Modifier</button>
+      <button class="btn btn-gris" data-act="couper-arbre" data-bac="${b.id}">🪓 Couper un arbre</button></div>`;
 }
 
 function renderEnclos(b) {
@@ -809,9 +810,9 @@ $('#r-notifs').addEventListener('change', (e) => {
 $('#r-nom').addEventListener('change', (e) => { etat.nom = e.target.value.trim() || 'Mon potager'; sauver(); renderReglages(); });
 
 // ── Éditeur de bac / serre / enclos ─────────────────────────────────────
-function ouvrirEditeur(id, type = 'bac') {
+function ouvrirEditeur(id, type = 'bac', base = {}) {
   const existant = id ? bacParId(id) : null;
-  const b = existant ? { ...existant } : nouveauBac(type);
+  const b = existant ? { ...existant } : nouveauBac(type, base);
   const borner = (v, min, max, def) => Math.min(max, Math.max(min, Number(String(v).replace(',', '.')) || def));
   const limitesH = { bac: [0.1, 1.2], serre: [1.5, 3.5], enclos: [0.4, 2], terre: [0, 0], arbre: [1, 30] };
   const nomH = { bac: 'Hauteur du bac', serre: 'Hauteur de la serre', enclos: 'Hauteur de la clôture', terre: '', arbre: 'Hauteur de l\'arbre' };
@@ -874,6 +875,7 @@ function ouvrirEditeur(id, type = 'bac') {
         <button class="btn btn-mini" data-act="lieu-depuis-editeur">Changer</button>
       </div>
       ${estCulture(b) && existant ? `<div class="rangee"><button class="btn btn-gris" data-act="photo-bac">📷 Photo de ce ${b.type === 'serre' ? 'la serre' : 'bac'}</button></div>` : ''}
+      ${!existant && coutBois(b) ? `<p class="${(etat.bois || 0) >= coutBois(b) ? 'ok' : 'serre-info'}" id="e-bois">🪵 Il faut ${coutBois(b)} bûches de bois. Tu en as ${etat.bois || 0}${(etat.bois || 0) >= coutBois(b) ? ' : elles seront utilisées !' : (etat.bois ? ', elles seront utilisées et le reste acheté.' : '. Coupe des arbres pour en récolter !')}</p>` : ''}
       <button class="btn btn-vert gros large" data-act="enregistrer-bac">${existant ? '💾 Enregistrer' : '✨ Créer'}</button>
       ${existant && etat.bacs.length > 1 ? '<button class="btn btn-rouge large" data-act="supprimer-bac">🗑️ Supprimer</button>' : ''}`, true);
     $('#feuille').scrollTop = defile;
@@ -942,7 +944,11 @@ function ouvrirEditeur(id, type = 'bac') {
       lireChamps();
       f.onclick = null; f.oninput = null; f.onchange = null;
       const dimsChangees = existant && (existant.largeur !== b.largeur || existant.longueur !== b.longueur);
+      let utilise = 0;
+      if (!existant) { utilise = Math.min(etat.bois || 0, coutBois(b)); etat.bois = (etat.bois || 0) - utilise; }
       if (existant) Object.assign(existant, b); else etat.bacs.push(b);
+      if (utilise) setTimeout(() => toast(`🔨 ${utilise} bûche${utilise > 1 ? 's' : ''} de ton bois utilisée${utilise > 1 ? 's' : ''} !`, 'or'), 900);
+      majBois();
       if (!estCulture(b)) etat.plantations.filter((q) => q.bac === b.id).forEach((q) => { q.bac = bacsCultures()[0]?.id; q.x = null; q.y = null; });
       etat.bacActif = b.id; etat.accueilVu = true;
       await sauver(); fermerFeuille();
@@ -952,6 +958,86 @@ function ouvrirEditeur(id, type = 'bac') {
       toast(existant ? '💾 Enregistré !' : `${emojiElement(b)} « ${b.nom} » est dans ton jardin ! Regarde en 3D.`, 'vert');
     }
   };
+}
+
+// ── Bois : couper des arbres, puis construire avec ───────────────────
+function majBois() {
+  const b = $('#info-bois');
+  b.hidden = !etat.bois;
+  b.textContent = `🪵 ${etat.bois} bûche${etat.bois > 1 ? 's' : ''}`;
+}
+async function couperDecor(cle) {
+  if (!(await demander('🪓 Couper cet arbre ? Tu récupères des bûches 🪵 pour construire.', '🪓 Couper'))) return;
+  const gain = 2 + Math.floor(Math.random() * 3);
+  scene?.couperArbre(cle);
+  etat.coupes = [...(etat.coupes || []), cle];
+  etat.bois = (etat.bois || 0) + gain;
+  await sauver(); vibrer('moyen'); majBois(); renderNiveau();
+  toast(`🪓 Timber ! +${gain} bûches 🪵 (+5 XP)`, 'or');
+}
+async function couperMonArbre(id) {
+  const b = bacParId(id);
+  if (!b) return;
+  const a = ARBRES[b.espece] || ARBRES.pommier;
+  if (!(await demander(`🪓 Couper un ${a.nom.toLowerCase()} ? Tu récupères des bûches 🪵.`, '🪓 Couper'))) return;
+  const gain = Math.max(2, Math.round((b.hauteur || a.hauteur) * 1.5));
+  etat.bois = (etat.bois || 0) + gain;
+  etat.coupes = [...(etat.coupes || []), `verger:${id}:${Date.now()}`];
+  if (b.nombre > 1) { b.nombre -= 1; Object.assign(b, dimsVerger(b.espece, b.nombre)); }
+  else { etat.bacs = etat.bacs.filter((x) => x.id !== id); etat.bacActif = etat.bacs[0]?.id; }
+  await sauver(); vibrer('moyen'); majJardin(); toutRafraichir();
+  toast(`🪓 +${gain} bûches 🪵`, 'or');
+}
+// Bûches nécessaires pour construire en bois (bac, bordure, clôture, abri)
+function coutBois(b) {
+  const tour = 2 * (b.largeur + b.longueur);
+  let n = 0;
+  if (b.materiau === 'bois') n += Math.ceil(tour / (b.type === 'enclos' ? 3 : 1.5)) * (b.type === 'bac' ? Math.max(1, Math.round((b.hauteur || 0.3) / 0.3)) : 1);
+  if (b.type === 'enclos' && b.cabane !== false && b.animal !== 'abeille') n += 4;
+  return n;
+}
+function feuilleBois() {
+  ouvrirFeuille(`
+    <h2>🪵 Ton bois</h2>
+    <p class="xp-total">${etat.bois || 0} bûche${etat.bois > 1 ? 's' : ''}</p>
+    <p class="doux petit-texte" style="text-align:center">🪓 Touche un arbre du décor en 3D pour le couper (+5 XP). Agrandis le terrain pour avoir plus d'arbres.</p>
+    <h3>🔨 Construire avec ton bois</h3>
+    <div class="types-bac grand">
+      <button class="type-bac" data-construire="bac"><span>🪵</span><b>Bac en bois</b><small>Les bûches servent à faire les planches.</small></button>
+      <button class="type-bac" data-construire="enclos"><span>🐔</span><b>Enclos en bois</b><small>Clôture et abri pour tes animaux.</small></button>
+      <button class="type-bac" data-construire="terre"><span>🌱</span><b>Bordure en bois</b><small>Pour une planche en pleine terre.</small></button>
+    </div>
+    <p class="doux petit-texte">Quand tu crées quelque chose en bois, tes bûches sont utilisées automatiquement.</p>`);
+  $('#feuille').onclick = (e) => {
+    const c = e.target.closest('[data-construire]');
+    if (!c) return;
+    $('#feuille').onclick = null;
+    ouvrirEditeur(null, c.dataset.construire, { materiau: 'bois', couleur: COULEUR_DEFAUT.bois });
+  };
+}
+
+// ── Déplacer les installations ──────────────────────────────────────────
+let modeDeplacer = false;
+function basculerDeplacement(force) {
+  modeDeplacer = force ?? !modeDeplacer;
+  scene?.setDeplacement(modeDeplacer);
+  $('[data-act="deplacer-mode"]')?.classList.toggle('actif', modeDeplacer);
+  $('#bandeau-deplacer').hidden = !modeDeplacer;
+  if (modeDeplacer) allerA('visuel');
+}
+async function deplacerInstallation(id, x, z) {
+  // La première fois, on fige la place de toutes les installations pour que rien ne saute
+  const pos = scene?.positions() || {};
+  for (const b of etat.bacs) if (b.px == null && pos[b.id]) { b.px = Math.round(pos[b.id].x * 10) / 10; b.pz = Math.round(pos[b.id].z * 10) / 10; }
+  const b = bacParId(id);
+  if (!b) return;
+  b.px = x; b.pz = z;
+  await sauver(); majJardin(); render3D(); vibrer('leger');
+  toast(`📍 ${emojiElement(b)} ${b.nom} déplacé${b.type === 'serre' ? 'e' : ''}`, 'vert');
+}
+async function rangerAuto() {
+  for (const b of etat.bacs) { delete b.px; delete b.pz; }
+  await sauver(); majJardin(); render3D(); toast('🔄 Installations rangées automatiquement');
 }
 
 // Taille du terrain (l'île) : automatique ou plus grande pour avoir de la place
@@ -985,11 +1071,13 @@ function menuNouveau() {
     <h2>➕ Ajouter à mon jardin</h2>
     <div class="types-bac grand">${Object.entries(TYPES_BAC).map(([k, t]) => `
       <button class="type-bac" data-nouveau="${k}"><span>${t.emoji}</span><b>${t.nom}</b><small>${t.desc}</small></button>`).join('')}</div>
-    ${terrainHTML()}`);
+    ${terrainHTML()}
+    <div class="rangee"><button class="btn btn-gris" data-act="deplacer-depuis-menu">✋ Déplacer mes installations</button></div>`);
   brancherTerrain();
   $('#feuille').onclick = (e) => {
     const n = e.target.closest('[data-nouveau]');
     if (n) { $('#feuille').onclick = null; ouvrirEditeur(null, n.dataset.nouveau); }
+    if (e.target.closest('[data-act="deplacer-depuis-menu"]')) { $('#feuille').onclick = null; fermerFeuille(); basculerDeplacement(true); }
   };
 }
 $('#importer').addEventListener('change', async (e) => {
@@ -1047,6 +1135,11 @@ document.addEventListener('click', async (e) => {
   switch (b.dataset.act) {
     case 'photo': choisirPhoto(bacActuel()?.type === 'enclos' ? bacsCultures()[0]?.id : bacActuel()?.id); break;
     case 'nouvel-element': menuNouveau(); break;
+    case 'deplacer-mode': basculerDeplacement(); toast(modeDeplacer ? '✋ Attrape une installation et fais-la glisser' : '✅ Positions enregistrées'); break;
+    case 'deplacer-fin': basculerDeplacement(false); break;
+    case 'ranger-auto': rangerAuto(); break;
+    case 'couper-arbre': couperMonArbre(b.dataset.bac); break;
+    case 'bois': feuilleBois(); break;
     case 'editer-bac': ouvrirEditeur(b.dataset.bac || bacActuel()?.id); break;
     case 'sans-photo': etat.accueilVu = true; sauver(); majAccueil(); formulaire(); break;
     case 'detourer': if (bacActuel()) detourer(bacActuel().id, false); break;
@@ -1123,7 +1216,7 @@ function programmerRappels() {
 }
 
 function toutRafraichir() {
-  programmerRappels();
+  programmerRappels(); majBois();
   if (!$('#r-terrain').contains(document.activeElement)) { $('#r-terrain').innerHTML = terrainHTML('rt'); brancherTerrain('rt'); }
   render3D(); renderPlan(); renderListe(); renderNiveau(); majAccueil();
   if ($('#vue-conseils').classList.contains('active')) renderConseils(); else renderLieu();
@@ -1135,7 +1228,7 @@ async function demarrer() {
   etat = await chargerEtat();
   await migrer();
   renderReglages();
-  scene = creerScene($('#scene'), { onSelect: (id) => { if (id) ficheplantation(id); } });
+  scene = creerScene($('#scene'), { onSelect: (id) => { if (id) ficheplantation(id); }, onDecor: couperDecor, onDeplace: deplacerInstallation });
   if (scene) {
     scene.setFond(etat.fond);
     if (typeof etat.etiquettes === 'boolean') etat.etiquettes = etat.etiquettes ? 'auto' : 'aucune';
@@ -1156,11 +1249,12 @@ async function demarrer() {
     if (dlg) { dlg.click(); return true; }
     if (!$('#feuille').hidden) { $('#feuille').onclick = null; $('#feuille').oninput = null; $('#feuille').onchange = null; fermerFeuille(); return true; }
     if (placement) { finPlacement(); return true; }
+    if (modeDeplacer) { basculerDeplacement(false); return true; }
     if (!$('#vue-visuel').classList.contains('active')) { allerA('visuel'); return true; }
     return false;
   });
   if (!NATIF && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-window.monPotager = { get etat() { return etat; } }; // pratique pour les tests
+window.monPotager = { get etat() { return etat; }, couper: (cle) => couperDecor(cle), arbres: () => scene?.arbresCoupables() || [], ecran: (id) => scene?.ecranDe(id) }; // pratique pour les tests
 demarrer();

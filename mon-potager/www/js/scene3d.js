@@ -107,6 +107,17 @@ function arbre(r, x, z, echelle) {
   return g;
 }
 
+// Souche laissée quand on coupe un arbre
+function souche(x, z, echelle) {
+  const g = new THREE.Group();
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.12, 8), matPlat('#8a5a32'));
+  t.position.y = 0.06; t.castShadow = true; g.add(t);
+  const dessus = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.01, 8), matPlat('#e0b77a'));
+  dessus.position.y = 0.125; g.add(dessus);
+  g.position.set(x, 0, z); g.scale.setScalar(echelle);
+  return g;
+}
+
 function buisson(r, x, z) {
   const g = new THREE.Group();
   const couleurs = ['#ff6b8b', '#ffd23f', '#b07cff', '#ff9f43', '#ffffff'];
@@ -513,7 +524,7 @@ function construireEnclos(b) {
   return { groupe: g, hSol: 0.04, animaux };
 }
 
-export function creerScene(conteneur, { onSelect } = {}) {
+export function creerScene(conteneur, { onSelect, onDecor, onDeplace } = {}) {
   let renderer;
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: false });
@@ -549,9 +560,14 @@ export function creerScene(conteneur, { onSelect } = {}) {
   const ciel = new THREE.Group(); scene.add(ciel);
   const ombreTex = textureOmbre();
 
-  let jardin = { bacs: [], places: {}, hSol: {} };
+  let jardin = { bacs: [], places: {}, hSol: {}, coupes: new Set() };
   let textures = [];
   let troupeau = [];
+  let decorArbres = [];
+  let groupesBacs = {}; // id → groupe 3D de chaque installation
+  let modeDeplacer = false, saisie = null;
+  const solPlan = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // arbres du décor qu'on peut couper
+  const chutes = []; // arbres en train de tomber
   let modeEtiquettes = 'auto';
   let selection = null;
   let fondActuel = 'ciel';
@@ -576,29 +592,45 @@ export function creerScene(conteneur, { onSelect } = {}) {
     pointe.rotation.x = Math.PI; pointe.position.set(R * 0.2, -1.1 - R * 0.6, 0.1); ile.add(pointe);
 
     // Les bacs du jardin, chacun à sa place
-    troupeau = [];
+    troupeau = []; groupesBacs = {};
     for (const b of jardin.bacs) {
       const { groupe, hSol, animaux = [] } = construireBac(b, b.texture);
       troupeau.push(...animaux);
       groupe.position.set(places[b.id].x, 0, places[b.id].z);
+      groupe.userData.bacId = b.id; groupesBacs[b.id] = groupe;
       jardin.hSol[b.id] = hSol;
       ile.add(groupe);
     }
 
     // Décor : arbres, buissons fleuris, cailloux, sur l'anneau autour du bac
-    const rayonBac = rayon + 0.35;
-    const nDecor = Math.round(9 * Math.max(1, R / 5));
+    decorArbres = [];
+    // Le décor couvre toute l'île (positions fixes) mais évite les installations
+    const occupe = (x, z, marge = 0.7) => jardin.bacs.some((b) => {
+      const p = places[b.id];
+      return Math.abs(x - p.x) < b.largeur / 2 + marge && Math.abs(z - p.z) < b.longueur / 2 + marge;
+    });
+    const nDecor = Math.round(9 * Math.max(1, (R / 5) ** 1.5));
     for (let i = 0; i < nDecor; i++) {
       const a = (i / nDecor) * Math.PI * 2 + r() * 0.4;
-      const d = rayonBac + 0.5 + r() * (R - rayonBac - 1.1);
-      if (r() < 0.6) ile.add(arbre(r, Math.cos(a) * d, Math.sin(a) * d, (0.7 + r() * 0.5) * Math.max(1, R / 9)));
-      else ile.add(buisson(r, Math.cos(a) * d, Math.sin(a) * d));
+      const d = 0.8 + Math.sqrt(r()) * (R - 1.4);
+      if (r() < 0.6) {
+        const x = Math.cos(a) * d, z = Math.sin(a) * d, ech = (0.7 + r() * 0.5) * Math.max(1, R / 9);
+        const cle = `${Math.round(x * 10)},${Math.round(z * 10)}`;
+        if (occupe(x, z, 0.5 + 0.4 * ech)) continue;
+        if (jardin.coupes.has(cle)) { ile.add(souche(x, z, ech)); continue; }
+        // hasard propre à chaque arbre : en couper un ne change pas les autres
+        const ar = arbre(alea(1000 + i), x, z, ech); ar.userData.cle = cle; ar.userData.ech = ech;
+        decorArbres.push(ar); ile.add(ar);
+      }
+      else if (!occupe(Math.cos(a) * d, Math.sin(a) * d, 0.4)) ile.add(buisson(alea(2000 + i), Math.cos(a) * d, Math.sin(a) * d));
     }
     for (let i = 0; i < nDecor + 1; i++) {
-      const a = r() * Math.PI * 2, d = rayonBac + r() * (R - rayonBac - 0.3);
-      if (r() < 0.5) ile.add(buisson(r, Math.cos(a) * d, Math.sin(a) * d));
+      // tirages faits avant de savoir si la place est libre : le décor ne bouge pas quand on déplace une installation
+      const a = r() * Math.PI * 2, d = 0.5 + Math.sqrt(r()) * (R - 0.8), estBuisson = r() < 0.5, taille = r();
+      if (occupe(Math.cos(a) * d, Math.sin(a) * d, 0.3)) continue;
+      if (estBuisson) ile.add(buisson(alea(3000 + i), Math.cos(a) * d, Math.sin(a) * d));
       else {
-        const c = new THREE.Mesh(new THREE.DodecahedronGeometry(0.08 + r() * 0.08, 0), matPlat('#c9ccd6'));
+        const c = new THREE.Mesh(new THREE.DodecahedronGeometry(0.08 + taille * 0.08, 0), matPlat('#c9ccd6'));
         c.position.set(Math.cos(a) * d, 0.03, Math.sin(a) * d); c.castShadow = true; ile.add(c);
       }
     }
@@ -701,14 +733,60 @@ export function creerScene(conteneur, { onSelect } = {}) {
   // ── Toucher une plante ──
   const ray = new THREE.Raycaster();
   let depart = null;
-  renderer.domElement.addEventListener('pointerdown', (e) => { depart = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+  const versRayon = (e) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1), camera);
+  };
+  const pointSol = () => { const p = new THREE.Vector3(); return ray.ray.intersectPlane(solPlan, p) ? p : null; };
+  // Mode Déplacer : on attrape une installation et on la fait glisser sur le terrain
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    depart = { x: e.clientX, y: e.clientY, t: performance.now() };
+    if (!modeDeplacer) return;
+    versRayon(e);
+    const hit = ray.intersectObjects(Object.values(groupesBacs), true)[0];
+    if (!hit) return;
+    let o = hit.object; while (o && !o.userData.bacId) o = o.parent;
+    const p = pointSol();
+    if (!o || !p) return;
+    const b = jardin.bacs.find((x) => x.id === o.userData.bacId);
+    saisie = { groupe: o, b, dx: o.position.x - p.x, dz: o.position.z - p.z };
+    controles.enabled = false; marqueurs.visible = false;
+    o.position.y = 0.15; // on la soulève un peu
+    renderer.domElement.setPointerCapture(e.pointerId);
+  }, true);
+  renderer.domElement.addEventListener('pointermove', (e) => {
+    if (!saisie) return;
+    versRayon(e);
+    const p = pointSol(); if (!p) return;
+    const lim = Math.max(0.5, R - Math.max(saisie.b.largeur, saisie.b.longueur) / 2 - 0.2);
+    let x = p.x + saisie.dx, z = p.z + saisie.dz;
+    const d = Math.hypot(x, z); if (d > lim) { x *= lim / d; z *= lim / d; }
+    saisie.groupe.position.set(x, 0.15, z);
+  });
+  const lacher = () => {
+    if (!saisie) return;
+    const s = saisie; saisie = null;
+    s.groupe.position.y = 0; controles.enabled = true; marqueurs.visible = true;
+    depart = null;
+    onDeplace?.(s.b.id, Math.round(s.groupe.position.x * 10) / 10, Math.round(s.groupe.position.z * 10) / 10);
+  };
+  renderer.domElement.addEventListener('pointerup', lacher, true);
+  renderer.domElement.addEventListener('pointercancel', lacher, true);
   renderer.domElement.addEventListener('pointerup', (e) => {
+    if (modeDeplacer) return;
     if (!depart || Math.hypot(e.clientX - depart.x, e.clientY - depart.y) > 8 || performance.now() - depart.t > 500) return;
     const rect = renderer.domElement.getBoundingClientRect();
     ray.setFromCamera(new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1), camera);
     const cibles = [];
     marqueurs.children.forEach((g) => { cibles.push(g.userData.pastille); if (g.userData.etiquette.visible) cibles.push(g.userData.etiquette); });
     const hit = ray.intersectObjects(cibles, false)[0];
+    if (!hit && onDecor) {
+      const touche = ray.intersectObjects(decorArbres, true)[0];
+      if (touche) {
+        let o = touche.object; while (o && !o.userData.cle) o = o.parent;
+        if (o) { onDecor(o.userData.cle); return; }
+      }
+    }
     selection = hit ? hit.object.userData.id : null;
     majEtiquettes();
     onSelect?.(selection);
@@ -759,6 +837,15 @@ export function creerScene(conteneur, { onSelect } = {}) {
     });
     const dt = Math.min(0.05, t - (boucle.avant || t)); boucle.avant = t;
     for (const a of troupeau) animerAnimal(a, dt, t);
+    for (let i = chutes.length - 1; i >= 0; i--) { // l'arbre bascule, puis laisse une souche
+      const c = chutes[i]; c.t += dt;
+      const k = Math.min(1, c.t / 0.8);
+      c.arbre.rotation.z = (Math.PI / 2) * k * k; c.arbre.rotation.x = 0;
+      if (c.t > 1.2) {
+        c.arbre.scale.multiplyScalar(0.85);
+        if (c.arbre.scale.x < 0.05) { ile.remove(c.arbre); ile.add(souche(c.arbre.position.x, c.arbre.position.z, c.arbre.userData.ech)); chutes.splice(i, 1); }
+      }
+    }
     ciel.children.forEach((n) => {
       const u = n.userData; u.a += u.v * 0.016;
       n.position.set(Math.cos(u.a) * u.d, u.h, Math.sin(u.a) * u.d); n.rotation.y = -u.a;
@@ -775,8 +862,8 @@ export function creerScene(conteneur, { onSelect } = {}) {
 
   return {
     // bacs : [{ id, type, largeur, longueur, hauteur, materiau, couleur, image }]
-    majJardin(bacs, { taille = 0 } = {}) {
-      jardin.taille = taille;
+    majJardin(bacs, { taille = 0, coupes = [] } = {}) {
+      jardin.taille = taille; jardin.coupes = new Set(coupes);
       textures.forEach((t) => t.dispose()); textures = [];
       jardin.bacs = bacs.map((b) => {
         let texture = null;
@@ -794,6 +881,23 @@ export function creerScene(conteneur, { onSelect } = {}) {
       if (Math.abs(R - ancienR) > 0.01) { cadrer(R); appliquerFond(fondActuel); }
     },
     majPlantations,
+    arbresCoupables: () => decorArbres.map((x) => x.userData.cle),
+    setDeplacement(v) { modeDeplacer = v; controles.autoRotate = controles.autoRotate && !v; },
+    positions: () => Object.fromEntries(Object.entries(jardin.places).map(([id, p]) => [id, { x: p.x, z: p.z }])),
+    // pour les tests : position à l'écran d'une installation
+    ecranDe(id) {
+      const g = groupesBacs[id]; if (!g) return null;
+      const v = g.position.clone().project(camera), r = renderer.domElement.getBoundingClientRect();
+      return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
+    },
+    couperArbre(cle) {
+      const ar = decorArbres.find((x) => x.userData.cle === cle);
+      jardin.coupes.add(cle);
+      if (!ar) return;
+      decorArbres = decorArbres.filter((x) => x !== ar);
+      ar.rotation.set(0, 0, 0);
+      chutes.push({ arbre: ar, t: 0 });
+    },
     setFond: appliquerFond,
     setEtiquettes(mode) { modeEtiquettes = mode === true ? 'toutes' : mode === false ? 'aucune' : mode; majEtiquettes(); },
     setAutoRotation(v) { controles.autoRotate = v; },
