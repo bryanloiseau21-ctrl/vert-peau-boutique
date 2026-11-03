@@ -113,6 +113,8 @@ try {
   await page.waitForSelector('.feuille.ouverte');
   ok((await page.textContent('#feuille')).includes('15 mai 2026'), 'Fiche : date de plantation');
   ok(await page.locator('.cal-case.on').count() > 0, 'Fiche : calendrier coloré');
+  ok(await page.locator('#feuille .etapes li').count() >= 3, 'Fiche : étapes numérotées');
+  ok((await page.getAttribute('#feuille .liens-fiche a', 'href')).startsWith('https://fr.wikipedia.org/'), 'Fiche : lien vers la fiche complète');
   await capture(page, '06-fiche');
   await page.click('#feuille [data-act="fermer"]');
   await page.waitForTimeout(350);

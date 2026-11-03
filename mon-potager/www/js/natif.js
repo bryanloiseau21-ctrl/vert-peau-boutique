@@ -37,6 +37,14 @@ export async function partagerFichier(blob, nom, titre = 'Mon Potager') {
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 
+// Partage d'un texte (étapes d'une plante). Renvoie true si on a seulement copié le texte.
+export async function partagerTexte(titre, texte, url) {
+  const { Share } = P();
+  if (NATIF && Share) { try { await Share.share({ title: titre, text: texte, url }); } catch { /* annulé */ } return false; }
+  if (navigator.share) { try { await navigator.share({ title: titre, text: texte, url }); return false; } catch (e) { if (e.name === 'AbortError') return false; } }
+  try { await navigator.clipboard.writeText(`${texte}\n${url}`); return true; } catch { return false; }
+}
+
 // Position GPS → { lat, lon, altitude } (ou une erreur)
 export async function obtenirPosition() {
   const G = P().Geolocation;

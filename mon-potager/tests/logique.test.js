@@ -3,6 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PLANTES, PLANTE_PAR_ID, ZONES } from '../www/js/data.js';
+import { ETAPES, lienWiki } from '../www/js/etapes.js';
 import {
   periodes, ajusterMois, calendrier, recommandations, saison, travauxDuMois, detecterZone,
   estimerRecolte, avancement, bonnePeriode, homographie, appliquer, redresser, tailleRedressee, versISO,
@@ -18,6 +19,16 @@ test('base de plantes cohérente', () => {
     for (const a of p.amis || []) assert.ok(PLANTE_PAR_ID[a], `${p.id} : voisin inconnu ${a}`);
   }
   assert.ok(PLANTES.length >= 40);
+});
+
+test('chaque plante a ses étapes et son lien', () => {
+  for (const p of PLANTES) {
+    const e = ETAPES[p.id];
+    assert.ok(e, `${p.id} : pas d'étapes`);
+    assert.ok(e.etapes.length >= 3, `${p.id} : au moins 3 étapes`);
+    assert.ok(lienWiki(e.wiki).startsWith('https://fr.wikipedia.org/'), p.id);
+  }
+  assert.equal(Object.keys(ETAPES).length, PLANTES.length);
 });
 
 test('périodes continues, y compris à cheval sur deux années', () => {

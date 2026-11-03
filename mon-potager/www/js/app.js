@@ -7,7 +7,8 @@ import {
 import { lire, ecrire, chargerEtat, sauverEtat, ETAT_DEFAUT } from './stockage.js';
 import { chargerImage, ouvrirDetourage, redresserCanvas } from './detourage.js';
 import { creerScene, FONDS } from './scene3d.js';
-import { NATIF, vibrer, partagerFichier, obtenirPosition, programmerRecoltes, surNotificationTouchee, surBoutonRetour } from './natif.js';
+import { ETAPES, lienWiki } from './etapes.js';
+import { NATIF, vibrer, partagerFichier, partagerTexte, obtenirPosition, programmerRecoltes, surNotificationTouchee, surBoutonRetour } from './natif.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -311,7 +312,21 @@ function infosPlanteHTML(plante) {
     </div>
     <p class="conseil">💡 ${esc(plante.conseil)}</p>
     ${etat.zone === 'tropical' && plante.frais ? '<p class="conseil">🌴 En climat tropical, cultivez-la en saison fraîche et sèche ou en altitude.</p>' : ''}
-    ${amis.length ? `<p class="amis">🤝 Bons voisins : ${amis.map((a) => `<button class="puce mini" data-plante="${a.id}">${a.emoji} ${esc(a.nom)}</button>`).join(' ')}</p>` : ''}`;
+    ${amis.length ? `<p class="amis">🤝 Bons voisins : ${amis.map((a) => `<button class="puce mini" data-plante="${a.id}">${a.emoji} ${esc(a.nom)}</button>`).join(' ')}</p>` : ''}
+    ${etapesHTML(plante)}`;
+}
+
+// Étapes numérotées + lien vers la fiche complète + partage (comme les fiches de Boost Étudiant)
+function etapesHTML(plante) {
+  const e = ETAPES[plante.id];
+  if (!e) return '';
+  return `
+    <h3>📝 Les étapes</h3>
+    <ol class="etapes">${e.etapes.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>
+    <div class="rangee liens-fiche">
+      <a class="btn btn-bleu" href="${esc(lienWiki(e.wiki))}" target="_blank" rel="noopener noreferrer">📖 En savoir + ↗</a>
+      <button class="btn btn-gris" data-act="partager-plante" data-id="${plante.id}">📤 Partager</button>
+    </div>`;
 }
 
 function ficheplantation(id) {
@@ -448,6 +463,15 @@ $('#feuille').addEventListener('click', (e) => {
     return;
   }
   if (act === 'planter') { formulaire(null, b.dataset.plante); return; }
+  if (act === 'partager-plante') {
+    const plante = PLANTE_PAR_ID[id], e = ETAPES[id];
+    const cal = calendrier(plante, etat.zone, etat.hemisphere);
+    const enTerre = [...new Set([...cal.sa, ...cal.st, ...cal.pl])].sort((x, y) => x - y);
+    const texte = `${plante.emoji} ${plante.nom} : à mettre en terre en ${plageMois(enTerre)}, ${nomRecolte(plante).toLowerCase()} en ${plageMois(cal.re)}.\n`
+      + e.etapes.map((t, i) => `${i + 1}. ${t}`).join('\n') + '\n— Mon Potager 🌻';
+    partagerTexte(`${plante.emoji} ${plante.nom}`, texte, lienWiki(e.wiki)).then((copie) => { if (copie) toast('📋 Copié, colle-le à qui tu veux !', 'vert'); });
+    return;
+  }
   if (b.dataset.plante && !$('#feuille').onclick) fichePlante(b.dataset.plante);
 });
 $('#voile').addEventListener('click', () => { $('#feuille').onclick = null; $('#feuille').oninput = null; fermerFeuille(); });
