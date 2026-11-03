@@ -24,9 +24,11 @@ const estPrintemps = (m) => m >= 2 && m <= 8; // dans le calendrier de référen
 // Décale une liste de mois de la zone de référence vers une autre zone / hémisphère.
 // Le début d'une période se décale avec l'offset de sa saison, la fin aussi :
 // en méditerranéen la saison commence plus tôt et finit plus tard, en montagne c'est l'inverse.
-export function ajusterMois(mois, zoneId = 'oceanique', hemisphere = 'nord') {
+// abri = 'serre' : la saison commence un mois plus tôt et finit un mois plus tard.
+export function ajusterMois(mois, zoneId = 'oceanique', hemisphere = 'nord', abri = null) {
   if (!mois || mois.length === 0) return [];
-  const zone = ZONES[zoneId] || ZONES.oceanique;
+  const base = ZONES[zoneId] || ZONES.oceanique;
+  const zone = abri === 'serre' ? { printemps: base.printemps - 1, automne: base.automne + 1 } : base;
   let res;
   if (zoneId === 'tropical') {
     res = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -48,12 +50,12 @@ export function ajusterMois(mois, zoneId = 'oceanique', hemisphere = 'nord') {
 }
 
 // Calendrier complet d'une plante pour une zone donnée.
-export function calendrier(plante, zoneId, hemisphere) {
+export function calendrier(plante, zoneId, hemisphere, abri = null) {
   return {
-    sa: ajusterMois(plante.sa, zoneId, hemisphere),
-    st: ajusterMois(plante.st, zoneId, hemisphere),
-    pl: ajusterMois(plante.pl, zoneId, hemisphere),
-    re: ajusterMois(plante.re, zoneId, hemisphere),
+    sa: ajusterMois(plante.sa, zoneId, hemisphere, abri),
+    st: ajusterMois(plante.st, zoneId, hemisphere, abri),
+    pl: ajusterMois(plante.pl, zoneId, hemisphere, abri),
+    re: ajusterMois(plante.re, zoneId, hemisphere, abri),
   };
 }
 
@@ -66,10 +68,10 @@ export const ACTIONS = {
 export const nomRecolte = (plante) => (plante.cat === 'fleur' ? 'Floraison' : 'Récolte');
 
 // Recommandations pour un mois : quelles plantes semer / planter / récolter.
-export function recommandations(mois, zoneId = 'oceanique', hemisphere = 'nord', plantes = PLANTES) {
+export function recommandations(mois, zoneId = 'oceanique', hemisphere = 'nord', plantes = PLANTES, abri = null) {
   const res = { sa: [], st: [], pl: [], re: [] };
   for (const p of plantes) {
-    const cal = calendrier(p, zoneId, hemisphere);
+    const cal = calendrier(p, zoneId, hemisphere, abri);
     for (const a of Object.keys(res)) if (cal[a].includes(mois)) res[a].push(p);
   }
   return res;
@@ -116,12 +118,12 @@ const JOUR = 86400000;
 
 // Date estimée de la première récolte : au moins « jours » après la mise en terre,
 // et dans un mois de récolte pour la zone.
-export function estimerRecolte(plantation, zoneId = 'oceanique', hemisphere = 'nord') {
+export function estimerRecolte(plantation, zoneId = 'oceanique', hemisphere = 'nord', abri = null) {
   const p = PLANTE_PAR_ID[plantation.plante];
   if (!p || !plantation.date) return null;
   const debut = versDate(plantation.date);
   const mini = new Date(debut.getTime() + p.jours * JOUR);
-  const moisRecolte = ajusterMois(p.re, zoneId, hemisphere);
+  const moisRecolte = ajusterMois(p.re, zoneId, hemisphere, abri);
   if (moisRecolte.length === 0) return mini;
   const d = new Date(mini);
   for (let i = 0; i < 36; i++) {
@@ -135,8 +137,8 @@ export function estimerRecolte(plantation, zoneId = 'oceanique', hemisphere = 'n
 }
 
 // Avancement de la culture entre la plantation et la récolte estimée (0 → 1).
-export function avancement(plantation, aujourdhui = new Date(), zoneId, hemisphere) {
-  const recolte = estimerRecolte(plantation, zoneId, hemisphere);
+export function avancement(plantation, aujourdhui = new Date(), zoneId, hemisphere, abri = null) {
+  const recolte = estimerRecolte(plantation, zoneId, hemisphere, abri);
   if (!recolte) return 0;
   const debut = versDate(plantation.date).getTime();
   const total = recolte.getTime() - debut;
@@ -147,16 +149,45 @@ export function avancement(plantation, aujourdhui = new Date(), zoneId, hemisphe
 export function joursEntre(a, b) { return Math.round((b.getTime() - a.getTime()) / JOUR); }
 
 // Ce mois-ci, est-ce une bonne période pour mettre cette plante en terre ?
-export function bonnePeriode(planteId, mois, zoneId, hemisphere) {
+export function bonnePeriode(planteId, mois, zoneId, hemisphere, abri = null) {
   const p = PLANTE_PAR_ID[planteId];
   if (!p) return null;
-  const cal = calendrier(p, zoneId, hemisphere);
+  const cal = calendrier(p, zoneId, hemisphere, abri);
   return cal.sa.includes(mois) || cal.st.includes(mois) || cal.pl.includes(mois);
 }
 
-// Plantes de la liste qui craignent le gel (pour l'alerte météo).
-export function plantesGelives(plantations) {
-  return [...new Set(plantations.map((x) => x.plante))].map((id) => PLANTE_PAR_ID[id]).filter((p) => p && p.gel);
+// Plantes de la liste qui craignent le gel (pour l'alerte météo). Celles en serre sont à l'abri.
+export function plantesGelives(plantations, bacs = []) {
+  const enSerre = new Set(bacs.filter((b) => b.type === 'serre').map((b) => b.id));
+  return [...new Set(plantations.filter((x) => !enSerre.has(x.bac)).map((x) => x.plante))]
+    .map((id) => PLANTE_PAR_ID[id]).filter((p) => p && p.gel);
+}
+
+// ── Disposition des bacs sur l'île ─────────────────────────────────────
+// Range les bacs en rangées (avec une allée entre eux), puis centre le tout.
+// Renvoie { places: { id: { x, z } }, rayon } en mètres.
+export function disposerBacs(bacs, allee = 1) {
+  if (!bacs.length) return { places: {}, rayon: 3 };
+  const surface = bacs.reduce((s, b) => s + (b.largeur + allee) * (b.longueur + allee), 0);
+  const maxRangee = Math.max(...bacs.map((b) => b.largeur), Math.sqrt(surface) * 1.25);
+  const places = {};
+  let x = 0, z = 0, hRangee = 0;
+  for (const b of bacs) {
+    if (x > 0 && x + b.largeur > maxRangee) { x = 0; z += hRangee + allee; hRangee = 0; }
+    places[b.id] = { x: x + b.largeur / 2, z: z + b.longueur / 2 };
+    x += b.largeur + allee; hRangee = Math.max(hRangee, b.longueur);
+  }
+  const xs = bacs.map((b) => [places[b.id].x - b.largeur / 2, places[b.id].x + b.largeur / 2]).flat();
+  const zs = bacs.map((b) => [places[b.id].z - b.longueur / 2, places[b.id].z + b.longueur / 2]).flat();
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+  let rayon = 0;
+  for (const b of bacs) {
+    const p = places[b.id]; p.x -= cx; p.z -= cz;
+    for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      rayon = Math.max(rayon, Math.hypot(p.x + (sx * b.largeur) / 2, p.z + (sz * b.longueur) / 2));
+    }
+  }
+  return { places, rayon };
 }
 
 // ── Redressement de la photo (homographie) ─────────────────────────────

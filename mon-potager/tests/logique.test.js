@@ -6,7 +6,7 @@ import { PLANTES, PLANTE_PAR_ID, ZONES } from '../www/js/data.js';
 import { ETAPES, lienWiki } from '../www/js/etapes.js';
 import {
   periodes, ajusterMois, calendrier, recommandations, saison, travauxDuMois, detecterZone,
-  estimerRecolte, avancement, bonnePeriode, homographie, appliquer, redresser, tailleRedressee, versISO,
+  estimerRecolte, avancement, bonnePeriode, disposerBacs, plantesGelives, homographie, appliquer, redresser, tailleRedressee, versISO,
 } from '../www/js/logique.js';
 
 test('base de plantes cohérente', () => {
@@ -96,6 +96,32 @@ test('détection du climat selon la position', () => {
     assert.equal(r.hemisphere, hemi);
     assert.ok(ZONES[r.zone]);
   }
+});
+
+test('serre : saison plus longue', () => {
+  const t = PLANTE_PAR_ID.tomate;
+  assert.deepEqual(ajusterMois(t.pl, 'oceanique', 'nord', 'serre'), [4, 5]);
+  assert.deepEqual(ajusterMois(t.re, 'oceanique', 'nord', 'serre'), [6, 7, 8, 9, 10, 11]);
+  assert.equal(bonnePeriode('melon', 3, 'oceanique', 'nord'), false);
+  assert.equal(bonnePeriode('melon', 3, 'oceanique', 'nord', 'serre'), true);
+  // en serre, la tomate n'est pas dans l'alerte gel
+  const bacs = [{ id: 'a', type: 'bac' }, { id: 's', type: 'serre' }];
+  assert.equal(plantesGelives([{ plante: 'tomate', bac: 's' }], bacs).length, 0);
+  assert.equal(plantesGelives([{ plante: 'tomate', bac: 'a' }], bacs).length, 1);
+});
+
+test('disposition des bacs sur l\'île', () => {
+  const bacs = [{ id: 'a', largeur: 4, longueur: 3 }, { id: 'b', largeur: 2, longueur: 1 }, { id: 'c', largeur: 6, longueur: 3 }];
+  const { places, rayon } = disposerBacs(bacs);
+  // aucun bac ne se chevauche
+  for (let i = 0; i < bacs.length; i++) for (let j = i + 1; j < bacs.length; j++) {
+    const A = bacs[i], B = bacs[j], pa = places[A.id], pb = places[B.id];
+    const sepX = Math.abs(pa.x - pb.x) >= (A.largeur + B.largeur) / 2 - 1e-9;
+    const sepZ = Math.abs(pa.z - pb.z) >= (A.longueur + B.longueur) / 2 - 1e-9;
+    assert.ok(sepX || sepZ, `${A.id} et ${B.id} se chevauchent`);
+  }
+  assert.ok(rayon > 3 && rayon < 10);
+  assert.deepEqual(disposerBacs([{ id: 'x', largeur: 4, longueur: 2 }]).places.x, { x: 0, z: 0 });
 });
 
 test('estimation de la récolte', () => {

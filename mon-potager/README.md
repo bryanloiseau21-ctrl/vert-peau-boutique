@@ -28,6 +28,12 @@ npm run dev        # puis ouvre http://localhost:8080
 - **45 plantes** (légumes, fruits, aromatiques, fleurs) avec calendrier, exposition, espacement, arrosage, astuce et bons voisins.
 - **Climat** : méditerranéen, océanique, continental, montagne (> 900 m), tropical, hémisphère nord ou sud. Les dates sont décalées automatiquement (ex. tomates plantées en avril–mai à Marseille, juin–juillet en montagne).
 - **Récolte estimée** : au moins le délai de culture de la plante **et** dans un mois de récolte pour ta zone.
+- **Mon jardin** : plusieurs éléments sur l'île, chacun avec ses dimensions, sa couleur et son matériau :
+  - 🪵 bacs surélevés (bois, pierre, brique, métal, plastique, béton) et 🌱 planches en pleine terre ;
+  - 🏡 serres (verre, polycarbonate, tunnel) : dates de plantation un mois plus tôt, récolte un mois plus tard, pas d'alerte gel ;
+  - 🐔 enclos à animaux (poules, canards, lapins, moutons, chèvres, cochons, ruches) avec clôture, abri et animaux qui se baladent en 3D ;
+  - 🌳 arbres et vergers (17 espèces, dont 11 fruitiers) qui fleurissent et portent leurs fruits en 3D selon le mois ;
+  - 🏝️ taille du terrain réglable pour avoir de la place.
 - **Côté jeu** : niveau de jardinier et XP (plantations, nouvelles espèces, catégories, photo, région), confettis au passage de niveau.
 - **Natif (Android / iPhone)** : 🔔 notification le matin de chaque récolte estimée, 📤 partage de l'image 3D, 📳 vibrations, 📍 GPS, bouton retour Android.
 - **Données** : tout reste sur le téléphone (IndexedDB). La météo, l'altitude et la recherche de ville utilisent [Open-Meteo](https://open-meteo.com) (gratuit, sans compte) ; sans connexion, on choisit son climat à la main.

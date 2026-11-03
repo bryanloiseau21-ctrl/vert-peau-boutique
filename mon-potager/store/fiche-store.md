@@ -27,6 +27,12 @@ Mon Potager transforme ta photo en une petite île flottante façon jeu, avec to
 • Place chaque plante sur le plan de ton potager
 • 🔔 Une notif le matin où ta récolte est prête
 
+🏡 TOUT TON JARDIN
+• Bacs surélevés, planches en pleine terre et serres : dimensions, hauteur, matériau et couleur au choix
+• Enclos à animaux : poules, canards, lapins, moutons, chèvres, cochons, ruches… qui se baladent en 3D
+• Arbres et vergers : pommier, cerisier, figuier, olivier… en fleurs au printemps et chargés de fruits à la récolte
+• Agrandis ton terrain pour tout y mettre
+
 📅 QUOI PLANTER CE MOIS-CI
 • Ton climat détecté automatiquement : méditerranéen, océanique, continental, montagne, tropical (hémisphère nord et sud)
 • Pour chaque mois : semis à l'abri, semis en terre, plantations, récoltes et travaux du potager

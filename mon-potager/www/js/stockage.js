@@ -53,9 +53,8 @@ export async function ecrire(cle, valeur) {
 export const ETAT_DEFAUT = () => ({
   version: 1,
   nom: 'Mon potager',
-  largeur: 4, // mètres (gauche → droite sur la photo)
-  longueur: 3, // mètres (haut → bas sur la photo)
-  coins: null, // coins du potager sur la photo d'origine (0..1)
+  bacs: [], // bacs, serres et enclos : { id, type, nom, largeur, longueur, hauteur, materiau, couleur, coins, animal, nombre, cabane }
+  bacActif: null,
   lieu: null, // { nom, lat, lon, altitude }
   zone: 'oceanique',
   hemisphere: 'nord',
@@ -63,7 +62,7 @@ export const ETAT_DEFAUT = () => ({
   fond: 'ciel',
   etiquettes: 'auto', // auto (toutes si peu de plantes) · toutes · aucune
   notifs: true, // rappels de récolte (appli Android / iPhone)
-  plantations: [], // { id, plante, date, qte, note, x, y }
+  plantations: [], // { id, plante, bac, date, qte, note, x, y }
 });
 
 export async function chargerEtat() {

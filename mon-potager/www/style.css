@@ -376,6 +376,57 @@ main { position: fixed; inset: 0 0 var(--nav-h) 0; }
 .detourage-bas input { width: 100%; min-width: 0; border: 0; border-radius: 12px; padding: 10px; font-weight: 800; background: #2c3850; color: #fff; }
 .detourage .btn-gris { background: #2c3850; color: #fff; box-shadow: 0 5px 0 #121926; }
 
+/* ── Bacs, serres et enclos ── */
+.bacs { margin-bottom: -4px; }
+.bac-puce { display: inline-flex; align-items: center; gap: 6px; }
+.pastille-couleur { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(0,0,0,.15); flex: none; }
+.puce.ajout { background: linear-gradient(180deg, #fff3b8, var(--or)); color: #5a3d00; box-shadow: 0 3px 0 var(--or-fonce); }
+.plan-titre { display: flex; flex-direction: column; margin: 0 4px 10px; }
+.plan-titre b { font-size: 1.05rem; }
+.plan-titre small, .doux { color: var(--doux); font-weight: 700; }
+.petit-texte { font-size: .88rem; margin: 6px 0 0; }
+.types-bac { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.types-bac.grand { grid-template-columns: 1fr 1fr; }
+.type-bac {
+  border: 2px solid transparent; background: var(--gris); border-radius: 16px; padding: 10px 4px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 800; font-size: .76rem; text-align: center;
+  box-shadow: 0 3px 0 var(--gris-fonce); line-height: 1.15;
+}
+.type-bac span { font-size: 1.8rem; }
+.type-bac small { color: var(--doux); font-weight: 600; font-size: .74rem; }
+.types-bac.grand .type-bac { padding: 14px 10px; font-size: .9rem; }
+.type-bac.choisi { border-color: var(--vert); background: #e3f9df; color: #1d4d27; transform: scale(1.03); }
+.dims-bac { flex-wrap: wrap; }
+.dims-bac .champ { min-width: 90px; }
+.filtres.enveloppe { flex-wrap: wrap; overflow: visible; }
+.nuancier { display: flex; flex-wrap: wrap; gap: 8px; }
+.nuance { width: 38px; height: 38px; border-radius: 50%; border: 3px solid var(--carte); box-shadow: 0 0 0 2px var(--gris-fonce); cursor: pointer; padding: 0; }
+.nuance.choisi { box-shadow: 0 0 0 3px var(--vert); transform: scale(1.1); }
+.nuance.autre { display: grid; place-items: center; background: conic-gradient(#ff5d6c, #ffc93c, #3fbf5f, #3aa5ff, #8a6cff, #ff5d6c); position: relative; overflow: hidden; font-size: 1rem; }
+.nuance.autre input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.grille-animaux { display: grid; grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 8px; }
+.choix-animal {
+  border: 2px solid transparent; background: var(--gris); border-radius: 16px; padding: 8px 4px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: 800; font-size: .78rem; box-shadow: 0 3px 0 var(--gris-fonce);
+}
+.choix-animal span { font-size: 1.8rem; }
+.choix-animal.choisi { border-color: var(--violet); background: color-mix(in srgb, var(--violet) 15%, var(--carte)); transform: scale(1.04); }
+.interrupteur.cabane { margin-top: 0; padding-bottom: 12px; flex: 1; }
+.lieu-mini { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--gris); border-radius: 16px; padding: 10px 12px; }
+.lieu-mini small { color: var(--doux); font-weight: 700; }
+.lieu-mini .btn-mini { background: var(--carte); color: var(--texte); }
+.troupeau { display: flex; flex-wrap: wrap; gap: 4px; font-size: 1.6rem; margin: 6px 0; align-items: center; }
+.troupeau span { animation: flotte 2.4s ease-in-out infinite; }
+.troupeau span:nth-child(2n) { animation-delay: .6s; }
+.troupeau span:nth-child(3n) { animation-delay: 1.1s; }
+.serre-info { background: #eef6ff; color: #173f66; border-radius: 14px; padding: 10px 12px; font-weight: 600; margin: 10px 0 0; }
+.ligne-bac { font-size: .76rem; font-weight: 800; color: var(--violet); }
+#feuille .large + .large { margin-top: 12px; }
+
+.terrain { display: flex; align-items: center; gap: 12px; }
+.terrain input { flex: 1; accent-color: var(--vert); height: 28px; }
+.terrain b { min-width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+
 /* ── Confirmation ── */
 .dialogue { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: rgba(20,35,20,.5); animation: apparait .2s ease; }
 .dialogue-carte { background: var(--carte); border-radius: var(--rayon); padding: 20px; max-width: 360px; width: 100%; box-shadow: var(--ombre); animation: rebond .3s cubic-bezier(.3,1.6,.5,1); }

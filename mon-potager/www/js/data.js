@@ -205,6 +205,92 @@ export const PLANTES = [
     amis: ['pois'] },
 ];
 
+// Types de bacs, matériaux et couleurs proposées
+export const TYPES_BAC = {
+  bac: { nom: 'Bac surélevé', emoji: '🪵', hauteur: 0.3, desc: 'Un carré potager en hauteur : la terre se réchauffe vite et on se baisse moins.' },
+  terre: { nom: 'Pleine terre', emoji: '🌱', hauteur: 0.05, desc: 'Une planche cultivée directement dans le sol du jardin.' },
+  serre: { nom: 'Serre', emoji: '🏡', hauteur: 2.2, desc: 'À l\'abri du froid : on plante un mois plus tôt et on récolte un mois plus tard, sans risque de gel.' },
+};
+export const MATERIAUX = {
+  bac: { bois: 'Bois', pierre: 'Pierre', brique: 'Brique', metal: 'Métal', plastique: 'Plastique', beton: 'Béton' },
+  terre: { aucun: 'Sans bordure', bois: 'Bordure bois', pierre: 'Bordure pierres', metal: 'Bordure métal' },
+  serre: { verre: 'Verre', polycarbonate: 'Polycarbonate', tunnel: 'Tunnel plastique' },
+};
+export const COULEURS_BAC = ['#c98a4b', '#8b5a2b', '#e9d8b4', '#9aa3ad', '#b5523b', '#3f7d4e', '#2f6fa8', '#e2b33c', '#d9604c', '#5b5f66', '#ffffff', '#7a4fa3'];
+export const COULEUR_DEFAUT = { bois: '#c98a4b', pierre: '#9aa3ad', brique: '#b5523b', metal: '#5b5f66', plastique: '#3f7d4e', beton: '#b8b8b0', aucun: '#7a4b2a', verre: '#ffffff', polycarbonate: '#e9d8b4', tunnel: '#3f7d4e' };
+
+// Enclos à animaux
+TYPES_BAC.enclos = { nom: 'Enclos à animaux', emoji: '🐔', hauteur: 1.2, desc: 'Un espace clôturé pour tes animaux, avec leur abri.' };
+MATERIAUX.enclos = { bois: 'Clôture bois', grillage: 'Grillage', piquets: 'Ganivelle (piquets)', pierre: 'Muret en pierre' };
+COULEUR_DEFAUT.grillage = '#5b5f66'; COULEUR_DEFAUT.piquets = '#c98a4b';
+
+// m2 = place conseillée par animal dans l'enclos · abri = nom de la cabane
+export const ANIMAUX = {
+  poule: { nom: 'Poules', un: 'Poule', emoji: '🐔', m2: 5, abri: 'Poulailler', couleur: '#f5efe2',
+    conseil: 'Les poules mangent les restes de cuisine, les limaces et les insectes : de super alliées du potager (mais tiens-les loin des semis !).',
+    etapes: ['Prévois au moins 5 m² par poule et un poulailler fermé la nuit contre le renard.', 'Installe un perchoir, un pondoir avec de la paille et une mangeoire.', 'Donne de l\'eau propre tous les jours et du grain le soir.', 'Ramasse les œufs chaque jour et nettoie le poulailler chaque semaine.', 'Mets le fumier au compost : c\'est un engrais très riche.'] },
+  canard: { nom: 'Canards', un: 'Canard', emoji: '🦆', m2: 6, abri: 'Cabane', couleur: '#ffffff',
+    conseil: 'Les canards adorent les limaces et ne grattent pas la terre comme les poules. Ils ont besoin d\'eau pour se baigner.',
+    etapes: ['Prévois 6 m² par canard et une cabane fermée la nuit.', 'Installe une bassine ou une petite mare.', 'Change l\'eau souvent, elle se salit vite.', 'Donne du grain et laisse-les chasser les limaces.'] },
+  lapin: { nom: 'Lapins', un: 'Lapin', emoji: '🐇', m2: 4, abri: 'Clapier', couleur: '#cfc2b0',
+    conseil: 'Les lapins mangent les fanes de carottes et les feuilles du potager. Enterre le grillage : ils creusent !',
+    etapes: ['Prévois au moins 4 m² par lapin et un clapier à l\'abri de la pluie et du soleil.', 'Enterre le grillage sur 30 cm pour éviter les fuites.', 'Donne du foin à volonté, de l\'eau et un peu de légumes.', 'Nettoie la litière chaque semaine (elle va au compost).'] },
+  mouton: { nom: 'Moutons', un: 'Mouton', emoji: '🐑', m2: 500, abri: 'Abri', couleur: '#f4f1ea',
+    conseil: 'Les moutons tondent l\'herbe à ta place. Jamais seuls : prends-en au moins deux.',
+    etapes: ['Compte environ 500 m² de prairie par mouton, avec un abri contre la pluie.', 'Déclare-les à l\'EDE de ton département (obligatoire).', 'Donne de l\'eau propre et du foin l\'hiver.', 'Fais-les tondre chaque année au printemps.'] },
+  chevre: { nom: 'Chèvres', un: 'Chèvre', emoji: '🐐', m2: 300, abri: 'Chèvrerie', couleur: '#b98a5a',
+    conseil: 'Très curieuses et grimpeuses : une bonne clôture haute est indispensable. Jamais seules non plus.',
+    etapes: ['Prévois environ 300 m² par chèvre et une clôture d\'au moins 1,20 m.', 'Déclare-les à l\'EDE de ton département (obligatoire).', 'Donne du foin, de l\'eau et une pierre à sel.', 'Taille leurs onglons tous les 2–3 mois.'] },
+  cochon: { nom: 'Cochons', un: 'Cochon', emoji: '🐖', m2: 100, abri: 'Porcherie', couleur: '#f2a9b4',
+    conseil: 'Le cochon retourne la terre comme un motoculteur : idéal pour préparer une future parcelle.',
+    etapes: ['Prévois environ 100 m² par cochon et un abri au sec.', 'Déclare-le à l\'EDE de ton département (obligatoire, même pour un seul).', 'Installe un abreuvoir solide et une zone boueuse pour qu\'il se rafraîchisse.', 'Une clôture électrique basse évite qu\'il ne creuse dessous.'] },
+  abeille: { nom: 'Abeilles', un: 'Ruche', emoji: '🐝', m2: 4, abri: 'Ruche', couleur: '#ffd23f',
+    conseil: 'Les abeilles pollinisent tes fruits et légumes : plus de courgettes, de fraises et de tomates !',
+    etapes: ['Déclare tes ruches chaque année (en ligne, obligatoire dès la première).', 'Place la ruche au soleil du matin, entrée tournée vers le sud-est, loin des passages.', 'Mets un point d\'eau à proximité.', 'Fais-toi accompagner la première année par un rucher école.'] },
+};
+
+// Arbres (fruitiers ou non). Mois de la zone de référence ; esp = écart conseillé entre deux arbres (m) ;
+// annees = âge de l'arbre planté avant les premiers fruits ; forme = silhouette en 3D.
+TYPES_BAC.arbre = { nom: 'Arbre / verger', emoji: '🌳', hauteur: 4, desc: 'Un arbre ou un petit verger : fruitiers ou arbres pour l\'ombre et la haie.' };
+MATERIAUX.arbre = { aucun: 'Pied d\'arbre' };
+export const ARBRES = {
+  pommier: { nom: 'Pommier', emoji: '🍎', fruitier: true, forme: 'rond', feuillage: '#4caf50', fruit: '#e53935', fleur: '#ffd6e0', floraison: [4, 5], re: [8, 9, 10], annees: 3, esp: 5, hauteur: 4,
+    conseil: 'Plante au moins deux variétés différentes à côté pour une bonne pollinisation.' },
+  poirier: { nom: 'Poirier', emoji: '🍐', fruitier: true, forme: 'colonne', feuillage: '#43a047', fruit: '#c0ca33', fleur: '#ffffff', floraison: [3, 4], re: [8, 9, 10], annees: 4, esp: 5, hauteur: 5,
+    conseil: 'Cueille les poires un peu avant maturité et laisse-les finir de mûrir au frais.' },
+  cerisier: { nom: 'Cerisier', emoji: '🍒', fruitier: true, forme: 'rond', feuillage: '#388e3c', fruit: '#b71c1c', fleur: '#ffc1d6', floraison: [3, 4], re: [6, 7], annees: 4, esp: 6, hauteur: 5,
+    conseil: 'Protège les cerises des oiseaux avec un filet quand elles rougissent.' },
+  prunier: { nom: 'Prunier', emoji: '🫐', fruitier: true, forme: 'rond', feuillage: '#558b2f', fruit: '#6a1b9a', fleur: '#ffffff', floraison: [3, 4], re: [7, 8, 9], annees: 3, esp: 5, hauteur: 4,
+    conseil: 'Très facile et productif : la mirabelle et la reine-claude sont parfaites pour débuter.' },
+  abricotier: { nom: 'Abricotier', emoji: '🍑', fruitier: true, forme: 'rond', feuillage: '#689f38', fruit: '#ffa726', fleur: '#ffe0e6', floraison: [3, 4], re: [7], annees: 3, esp: 5, hauteur: 4,
+    conseil: 'Fleurit tôt : plante-le contre un mur exposé au sud pour éviter les gelées sur les fleurs.' },
+  pecher: { nom: 'Pêcher', emoji: '🍑', fruitier: true, forme: 'rond', feuillage: '#7cb342', fruit: '#ff8a65', fleur: '#f48fb1', floraison: [3, 4], re: [7, 8, 9], annees: 2, esp: 4, hauteur: 3.5,
+    conseil: 'Traite contre la cloque au moment où les bourgeons gonflent (bouillie bordelaise).' },
+  figuier: { nom: 'Figuier', emoji: '🟣', fruitier: true, forme: 'large', feuillage: '#2e7d32', fruit: '#5e35b1', fleur: null, floraison: [], re: [8, 9], annees: 2, esp: 5, hauteur: 4,
+    conseil: 'Aime la chaleur : au pied d\'un mur ensoleillé. Il supporte jusqu\'à environ -12 °C.' },
+  olivier: { nom: 'Olivier', emoji: '🫒', fruitier: true, forme: 'large', feuillage: '#8aa37b', fruit: '#33691e', fleur: '#fffde7', floraison: [5, 6], re: [10, 11, 12], annees: 4, esp: 6, hauteur: 4,
+    conseil: 'Plein soleil et sol bien drainé. En climat froid, cultive-le en grand pot à rentrer l\'hiver.' },
+  citronnier: { nom: 'Citronnier', emoji: '🍋', fruitier: true, forme: 'rond', feuillage: '#1b5e20', fruit: '#fdd835', fleur: '#ffffff', floraison: [3, 4, 5], re: [11, 12, 1, 2, 3], annees: 2, esp: 4, hauteur: 3,
+    conseil: 'Craint le gel : en pleine terre seulement en climat méditerranéen, sinon en pot.' },
+  noyer: { nom: 'Noyer', emoji: '🌰', fruitier: true, forme: 'large', feuillage: '#33691e', fruit: '#8d6e63', fleur: null, floraison: [], re: [9, 10], annees: 6, esp: 10, hauteur: 10,
+    conseil: 'Devient très grand : laisse-lui de la place, loin du potager (ses racines gênent les légumes).' },
+  noisetier: { nom: 'Noisetier', emoji: '🌰', fruitier: true, forme: 'buisson', feuillage: '#558b2f', fruit: '#a1887f', fleur: null, floraison: [], re: [8, 9], annees: 3, esp: 4, hauteur: 3.5,
+    conseil: 'Parfait en haie fruitière. Plantes-en au moins deux pour qu\'ils se pollinisent.' },
+  chene: { nom: 'Chêne', emoji: '🌳', fruitier: false, forme: 'large', feuillage: '#2e7d32', esp: 12, hauteur: 12, conseil: 'Un arbre pour des siècles, refuge pour des centaines d\'espèces.' },
+  erable: { nom: 'Érable', emoji: '🍁', fruitier: false, forme: 'rond', feuillage: '#e65100', esp: 8, hauteur: 8, conseil: 'Magnifique feuillage orange et rouge à l\'automne.' },
+  bouleau: { nom: 'Bouleau', emoji: '🌳', fruitier: false, forme: 'colonne', feuillage: '#9ccc65', tronc: '#f5f5f5', esp: 5, hauteur: 9, conseil: 'Pousse vite, ombre légère qui laisse passer la lumière.' },
+  saule: { nom: 'Saule pleureur', emoji: '🌿', fruitier: false, forme: 'pleureur', feuillage: '#9ccc65', esp: 10, hauteur: 8, conseil: 'Adore l\'humidité : idéal près d\'une mare.' },
+  sapin: { nom: 'Sapin', emoji: '🌲', fruitier: false, forme: 'cone', feuillage: '#1b5e20', esp: 5, hauteur: 8, conseil: 'Reste vert toute l\'année, bon brise-vent.' },
+  palmier: { nom: 'Palmier', emoji: '🌴', fruitier: false, forme: 'palmier', feuillage: '#43a047', esp: 4, hauteur: 5, conseil: 'Le palmier de Chine (Trachycarpus) résiste jusqu\'à -15 °C.' },
+};
+export const ETAPES_ARBRE = [
+  'Plante de novembre à mars, hors période de gel (racines nues), ou toute l\'année en conteneur.',
+  'Creuse un trou deux fois plus large que les racines et ajoute du compost.',
+  'Plante un tuteur côté vent dominant avant de mettre l\'arbre.',
+  'Garde le point de greffe au-dessus du sol, rebouche et tasse bien.',
+  'Arrose copieusement (20 litres) puis toutes les semaines la première année, et paille le pied.',
+];
+
 export const PLANTE_PAR_ID = Object.fromEntries(PLANTES.map((p) => [p.id, p]));
 
 // Zones climatiques. Les décalages sont en mois par rapport à la zone de référence :

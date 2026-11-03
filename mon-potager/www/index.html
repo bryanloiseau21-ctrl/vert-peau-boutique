@@ -32,6 +32,7 @@
         <div class="pastille-info jaune" id="info-recolte" hidden></div>
       </div>
       <div class="barre-outils">
+        <button class="rond" data-act="nouvel-element" title="Ajouter un bac, une serre ou un enclos" aria-label="Ajouter un bac, une serre ou un enclos">➕</button>
         <button class="rond" data-act="photo" title="Photo du potager" aria-label="Photo du potager">📷</button>
         <button class="rond" data-act="etiquettes" title="Étiquettes" aria-label="Afficher ou masquer les étiquettes">🏷️</button>
         <button class="rond" data-act="tourner" title="Rotation automatique" aria-label="Rotation automatique">🔄</button>
@@ -58,11 +59,15 @@
           <span id="placement-texte">Touche le plan pour placer ta plante</span>
           <button class="btn btn-mini" data-act="placement-fin">Plus tard</button>
         </div>
-        <div class="carte carte-plan">
+        <div class="filtres bacs" id="bacs"></div>
+        <div class="carte" id="carte-enclos" hidden></div>
+        <div class="carte carte-plan" id="carte-plan">
+          <div class="plan-titre" id="plan-titre"></div>
           <div class="plan" id="plan"><img id="plan-img" alt="Plan de mon potager vu du dessus"><div id="plan-marqueurs"></div></div>
           <div class="rangee">
             <button class="btn btn-gris" data-act="photo">📷 Photo</button>
             <button class="btn btn-gris" data-act="detourer" id="btn-detourer">✂️ Détourage</button>
+            <button class="btn btn-gris" data-act="editer-bac">⚙️ Bac</button>
           </div>
         </div>
         <button class="btn btn-vert gros large" data-act="ajouter">➕ Ajouter une plantation</button>
@@ -71,10 +76,7 @@
         <details class="carte reglages">
           <summary>⚙️ Réglages du potager</summary>
           <label class="champ">Nom du potager <input id="r-nom" maxlength="30"></label>
-          <div class="rangee">
-            <label class="champ">↔️ Largeur (m) <input id="r-largeur" type="number" min="0.3" max="100" step="0.1"></label>
-            <label class="champ">↕️ Longueur (m) <input id="r-longueur" type="number" min="0.3" max="100" step="0.1"></label>
-          </div>
+          <div id="r-terrain"></div>
           <label class="interrupteur" id="ligne-notifs"><input type="checkbox" id="r-notifs"><span></span>🔔 Me prévenir quand une récolte est prête</label>
           <div class="rangee">
             <button class="btn btn-gris" data-act="exporter">💾 Sauvegarder</button>
@@ -96,6 +98,7 @@
           <div class="mois-titre"><b id="mois-nom">Novembre</b><span id="mois-saison">🍂 Automne</span></div>
           <button class="rond petit" data-act="mois-suiv" aria-label="Mois suivant">▶</button>
         </div>
+        <div class="filtres" id="conseil-abri"></div>
         <div class="carte travaux"><h3>🧑‍🌾 Au potager ce mois-ci</h3><ul id="travaux"></ul></div>
         <div id="recos"></div>
       </div>
