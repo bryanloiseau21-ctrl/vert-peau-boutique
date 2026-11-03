@@ -1,0 +1,27 @@
+{
+  "name": "coach-veilleur",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Veilleur : coach sportif de poche qui s'adapte à ta forme et à tes résultats.",
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes serve www -l 8080",
+    "test": "node --test tests/coach.test.js tests/nutrition.test.js && node tests/ui.test.js",
+    "test:logique": "node --test tests/coach.test.js tests/nutrition.test.js",
+    "anthropic": "node scripts/vendor-anthropic.js",
+    "sync": "cap sync",
+    "icones": "node scripts/icones.js",
+    "assets": "capacitor-assets generate --android --ios --iconBackgroundColor '#050607' --splashBackgroundColor '#050607'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0",
+    "@capacitor/local-notifications": "^8.3.1"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^1.3.0",
+    "@capacitor/cli": "^8.6.0",
+    "esbuild": "^0.28.2"
+  }
+}

@@ -69,6 +69,10 @@ jobs:
       - name: Ajouter Rempart des Runes
         run: cp -r rempart-des-runes/www bot-stages/app/rempart
 
+      # Veilleur (coach sport et nutrition) publié sous /veilleur/
+      - name: Ajouter Veilleur
+        run: cp -r coach-veilleur/www bot-stages/app/veilleur
+
       # Mon Potager (potager en 3D + calendrier de plantation) publié sous /potager/
       - name: Ajouter Mon Potager
         run: cp -r mon-potager/www bot-stages/app/potager

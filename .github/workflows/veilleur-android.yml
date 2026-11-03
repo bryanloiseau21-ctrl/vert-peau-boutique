@@ -1,0 +1,62 @@
+# Compile Veilleur (coach perso) pour Android.
+# À chaque modification : tests, puis APK de test à installer directement sur un téléphone Android.
+# Récupération : onglet Actions → « Veilleur – Android » → dernier run → Artifacts → veilleur-android.
+name: Veilleur – Android
+
+on:
+  push:
+    paths: ["coach-veilleur/**", ".github/workflows/veilleur-android.yml"]
+  pull_request:
+    paths: ["coach-veilleur/**", ".github/workflows/veilleur-android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: coach-veilleur
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: coach-veilleur/package-lock.json
+      - run: npm ci
+      - name: Logique du coach
+        run: npm run test:logique
+      - name: Parcours complet (iPhone)
+        run: npm install --no-save playwright@1 && npx playwright install --with-deps chromium && node tests/ui.test.js
+      - name: SDK Claude intégré à jour
+        run: npm run anthropic && git diff --exit-code -- www/vendor
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Synchroniser le projet Android
+        run: |
+          npx cap sync android
+          VERSION=$(node -p "require('./package.json').version")
+          sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"$VERSION\"/" android/app/build.gradle
+
+      - name: APK de test
+        working-directory: coach-veilleur/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: veilleur-android
+          if-no-files-found: error
+          path: coach-veilleur/android/app/build/outputs/apk/debug/*.apk
