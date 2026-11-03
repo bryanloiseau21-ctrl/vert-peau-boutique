@@ -376,6 +376,12 @@ main { position: fixed; inset: 0 0 var(--nav-h) 0; }
 .detourage-bas input { width: 100%; min-width: 0; border: 0; border-radius: 12px; padding: 10px; font-weight: 800; background: #2c3850; color: #fff; }
 .detourage .btn-gris { background: #2c3850; color: #fff; box-shadow: 0 5px 0 #121926; }
 
+/* ── Confirmation ── */
+.dialogue { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: rgba(20,35,20,.5); animation: apparait .2s ease; }
+.dialogue-carte { background: var(--carte); border-radius: var(--rayon); padding: 20px; max-width: 360px; width: 100%; box-shadow: var(--ombre); animation: rebond .3s cubic-bezier(.3,1.6,.5,1); }
+.dialogue-carte p { margin: 0 0 6px; font-weight: 800; font-size: 1.05rem; text-align: center; }
+.dialogue .btn-rouge { flex: 1; }
+
 /* ── Toasts & confettis ── */
 .toasts { position: fixed; z-index: 80; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 70px); display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding: 0 16px; }
 .toast {

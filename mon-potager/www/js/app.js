@@ -37,6 +37,23 @@ function toast(texte, type = '') {
   setTimeout(() => t.remove(), 3000);
 }
 
+// Confirmation dans l'appli (les fenêtres confirm() du navigateur ne marchent pas partout)
+function demander(message, oui = 'Oui', non = 'Annuler') {
+  return new Promise((resolve) => {
+    const d = document.createElement('div');
+    d.className = 'dialogue'; d.setAttribute('role', 'alertdialog'); d.setAttribute('aria-modal', 'true');
+    d.innerHTML = `<div class="dialogue-carte"><p>${esc(message)}</p>
+      <div class="rangee"><button class="btn btn-gris" data-rep="non">${esc(non)}</button><button class="btn btn-rouge" data-rep="oui">${esc(oui)}</button></div></div>`;
+    document.body.appendChild(d);
+    d.querySelector('[data-rep="non"]').focus();
+    d.addEventListener('click', (e) => {
+      const r = e.target.closest('[data-rep]')?.dataset.rep;
+      if (!r && e.target !== d) return;
+      e.stopPropagation(); d.remove(); resolve(r === 'oui');
+    });
+  });
+}
+
 function confettis() {
   const emojis = ['🌻', '🍅', '🥕', '⭐', '🌸', '🍓', '✨'];
   for (let i = 0; i < 24; i++) {
@@ -458,10 +475,12 @@ $('#feuille').addEventListener('click', (e) => {
   if (act === 'deplacer') { fermerFeuille(); debutPlacement(id); return; }
   if (act === 'supprimer') {
     const p = etat.plantations.find((q) => q.id === id);
-    if (p && confirm(`Supprimer ${PLANTE_PAR_ID[p.plante].nom} ?`)) {
+    if (!p) return;
+    demander(`Supprimer ${PLANTE_PAR_ID[p.plante].emoji} ${PLANTE_PAR_ID[p.plante].nom} de ton potager ?`, '🗑️ Supprimer').then((ok) => {
+      if (!ok) return;
       etat.plantations = etat.plantations.filter((q) => q.id !== id);
       sauver(); fermerFeuille(); toutRafraichir(); toast('🗑️ Supprimé');
-    }
+    });
     return;
   }
   if (act === 'planter') { formulaire(null, b.dataset.plante); return; }
@@ -697,7 +716,7 @@ document.addEventListener('click', async (e) => {
     case 'changer-lieu': choisirLieu(); break;
     case 'exporter': exporter(); break;
     case 'reinitialiser':
-      if (confirm('Effacer tout le potager (plantations et photo) ?')) {
+      if (await demander('Effacer tout le potager (plantations et photo) ? On ne pourra pas revenir en arrière.', '🗑️ Tout effacer')) {
         etat = ETAT_DEFAUT(); sourcePhoto = null;
         await ecrire('photoOriginale', null); await ecrire('photoPlan', null); await sauver();
         await appliquerPlan(null); scene?.setFond(etat.fond); renderReglages(); toutRafraichir(); allerA('visuel');
@@ -768,6 +787,8 @@ async function demarrer() {
   surBoutonRetour(() => {
     const det = document.querySelector('.detourage');
     if (det) { det.querySelector('[data-act="annuler"]').click(); return true; }
+    const dlg = document.querySelector('.dialogue');
+    if (dlg) { dlg.click(); return true; }
     if (!$('#feuille').hidden) { $('#feuille').onclick = null; $('#feuille').oninput = null; fermerFeuille(); return true; }
     if (placement) { finPlacement(); return true; }
     if (!$('#vue-visuel').classList.contains('active')) { allerA('visuel'); return true; }
