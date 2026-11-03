@@ -306,6 +306,8 @@ function calendrierHTML(plante) {
 function infosPlanteHTML(plante) {
   const amis = (plante.amis || []).map((id) => PLANTE_PAR_ID[id]).filter(Boolean);
   return `
+    ${etapesHTML(plante)}
+    <h3>ℹ️ Bon à savoir</h3>
     <div class="puces-infos">
       <span>☀️ ${esc(plante.expo)}</span><span>📏 ${plante.esp} cm</span><span>💧 ${esc(plante.eau)}</span>
       ${plante.gel ? '<span class="froid">🥶 Craint le gel</span>' : ''}${plante.vivace ? '<span>♻️ Vivace</span>' : ''}
@@ -313,7 +315,7 @@ function infosPlanteHTML(plante) {
     <p class="conseil">💡 ${esc(plante.conseil)}</p>
     ${etat.zone === 'tropical' && plante.frais ? '<p class="conseil">🌴 En climat tropical, cultivez-la en saison fraîche et sèche ou en altitude.</p>' : ''}
     ${amis.length ? `<p class="amis">🤝 Bons voisins : ${amis.map((a) => `<button class="puce mini" data-plante="${a.id}">${a.emoji} ${esc(a.nom)}</button>`).join(' ')}</p>` : ''}
-    ${etapesHTML(plante)}`;
+`;
 }
 
 // Étapes numérotées + lien vers la fiche complète + partage (comme les fiches de Boost Étudiant)
