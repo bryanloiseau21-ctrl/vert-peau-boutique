@@ -243,9 +243,50 @@ try {
   await capture(page, '17-deplacement');
   await page.click('[data-act="deplacer-fin"]');
 
+  // Toucher une installation : elle rebondit, des emojis jaillissent, son nom s'affiche
+  await page.waitForTimeout(400);
+  const ecranSerre = await page.evaluate((id) => window.monPotager.ecran(id), idSerre);
+  await page.mouse.click(ecranSerre.x, ecranSerre.y);
+  await page.waitForTimeout(250);
+  ok((await page.textContent('#toasts')).includes(s2.nom), 'Toucher une installation : animation et nom affiché');
+  await capture(page, '18-animation');
+
+  // Une maison et mon personnage
+  await page.click('[data-act="nouvel-element"]');
+  await page.click('[data-nouveau="maison"]');
+  await page.waitForSelector('[data-toit]');
+  await page.click('[data-mat="pierre"]');
+  await page.click('[data-toit="#2f6fa8"]');
+  await page.click('[data-act="enregistrer-bac"]');
+  await page.waitForTimeout(400);
+  bacs = await page.evaluate(() => window.monPotager.etat.bacs);
+  const maison = bacs.find((b) => b.type === 'maison');
+  ok(maison && maison.materiau === 'pierre' && maison.toit === '#2f6fa8', 'Maison en pierre au toit bleu');
+  await page.click('[data-act="perso"]');
+  await page.waitForSelector('#p-nom');
+  await page.fill('#p-nom', 'Bryan');
+  await page.click('[data-p="coiffure"][data-v="boucles"]');
+  await page.click('[data-p="haut"][data-v="#e74c3c"]');
+  await page.click('[data-p="chapeau"][data-v="casquette"]');
+  await page.click('[data-p="outil"][data-v="panier"]');
+  await page.click('[data-act="enregistrer-perso"]');
+  await page.waitForTimeout(1200);
+  const perso = await page.evaluate(() => window.monPotager.etat.perso);
+  ok(perso.nom === 'Bryan' && perso.coiffure === 'boucles' && perso.haut === '#e74c3c' && perso.chapeau === 'casquette' && perso.outil === 'panier', 'Personnage choisi (prénom, coiffure, haut, casquette, panier)');
+  await capture(page, '19-personnage');
+  // Zoom sur la maison
+  await page.click('.onglet[data-vue="potager"]');
+  await page.click(`[data-bac="${maison.id}"]`);
+  await page.click('#carte-enclos [data-act="zoom"]');
+  await page.waitForTimeout(1300);
+  ok(await page.isVisible('#vue-visuel'), 'Zoom : retour au visuel 3D');
+  await capture(page, '20-zoom-maison');
+  await page.click('[data-act="recentrer"]');
+  await page.waitForTimeout(1000);
+
   // Planter en serre : le calendrier change
   await page.click('.onglet[data-vue="potager"]');
-  ok(await page.locator('#bacs .bac-puce').count() === 5, '5 éléments dans le jardin');
+  ok(await page.locator('#bacs .bac-puce').count() === 6, '6 éléments dans le jardin');
   await page.click(`[data-bac="${enclos.id}"]`);
   ok(!(await page.isVisible('#carte-plan')) && await page.isVisible('#carte-enclos'), 'Fiche de l\'enclos affichée');
   await page.click(`[data-bac="${serre.id}"]`);
@@ -271,7 +312,7 @@ try {
   await page.click('#bacs .bac-puce >> nth=0');
   await page.waitForFunction(() => document.querySelector('#plan-img')?.getAttribute('src'));
   const etat = await page.evaluate(() => window.monPotager.etat);
-  ok(etat.plantations.length === 2 && etat.zone === 'mediterraneen' && etat.bacs.length === 5 && etat.tailleTerrain === 60 && etat.coupes.length === 1 && etat.bacs.every((b) => b.px != null), 'Données conservées après rechargement');
+  ok(etat.plantations.length === 2 && etat.zone === 'mediterraneen' && etat.bacs.length === 6 && etat.tailleTerrain === 60 && etat.perso.nom === 'Bryan' && etat.coupes.length === 1 && etat.bacs.every((b) => b.px != null), 'Données conservées après rechargement');
   ok(await page.evaluate(() => new Promise((r) => { const i = document.querySelector('#plan-img'); if (i.complete) r(i.naturalWidth > 0); else { i.onload = () => r(true); i.onerror = () => r(false); } })),
     'Photo du potager toujours là après rechargement');
   ok(!(await page.isVisible('#accueil')), 'Pas d\'accueil au retour');

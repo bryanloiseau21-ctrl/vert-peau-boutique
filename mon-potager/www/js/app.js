@@ -1,5 +1,5 @@
 // Mon Potager : interface de l'appli.
-import { PLANTES, PLANTE_PAR_ID, CATEGORIES, ZONES, MOIS, MOIS_COURT, TYPES_BAC, MATERIAUX, COULEURS_BAC, COULEUR_DEFAUT, ANIMAUX, ARBRES, ETAPES_ARBRE } from './data.js';
+import { PLANTES, PLANTE_PAR_ID, CATEGORIES, ZONES, MOIS, MOIS_COURT, TYPES_BAC, MATERIAUX, COULEURS_BAC, COULEUR_DEFAUT, ANIMAUX, ARBRES, ETAPES_ARBRE, COULEURS_TOIT, PERSO, PERSO_DEFAUT } from './data.js';
 import {
   ACTIONS, ajusterMois, calendrier, disposerBacs, recommandations, saison, travauxDuMois, detecterZone, estimerRecolte, avancement,
   joursEntre, bonnePeriode, plantesGelives, periodes, versISO, versDate, formatDate, nomRecolte,
@@ -78,7 +78,7 @@ function plageMois(liste) {
 const cleOrig = (id) => `photoOriginale:${id}`;
 const clePlan = (id) => `photoPlan:${id}`;
 const bacParId = (id) => etat.bacs.find((b) => b.id === id);
-const estCulture = (b) => b && b.type !== 'enclos' && b.type !== 'arbre';
+const estCulture = (b) => b && !['enclos', 'arbre', 'maison'].includes(b.type);
 const bacsCultures = () => etat.bacs.filter(estCulture);
 const bacDe = (p) => bacParId(p.bac) || bacsCultures()[0];
 const abriDe = (p) => (bacDe(p)?.type === 'serre' ? 'serre' : null);
@@ -103,8 +103,8 @@ function saisonArbre(b, mois = auj().getMonth() + 1) {
   return m === 10 || m === 11 ? 'automne' : null;
 }
 const nomArbres = (b) => { const a = ARBRES[b.espece] || ARBRES.pommier; return b.nombre > 1 ? `${b.nombre} ${a.nom.toLowerCase()}s` : `1 ${a.nom.toLowerCase()}`; };
-const emojiElement = (b) => (b.type === 'enclos' ? ANIMAUX[b.animal]?.emoji || '🐾' : b.type === 'arbre' ? ARBRES[b.espece]?.emoji || '🌳' : TYPES_BAC[b.type].emoji);
-const descBac = (b) => (b.type === 'arbre' ? `${nomArbres(b)} · ${fmtM(b.hauteur)} de haut` : b.type === 'enclos'
+const emojiElement = (b) => (b.type === 'maison' ? '🏠' : b.type === 'enclos' ? ANIMAUX[b.animal]?.emoji || '🐾' : b.type === 'arbre' ? ARBRES[b.espece]?.emoji || '🌳' : TYPES_BAC[b.type].emoji);
+const descBac = (b) => (b.type === 'maison' ? `${MATERIAUX.maison[b.materiau] || ''} · ${fmtM(b.largeur)} × ${fmtM(b.longueur)}` : b.type === 'arbre' ? `${nomArbres(b)} · ${fmtM(b.hauteur)} de haut` : b.type === 'enclos'
   ? `${ANIMAUX[b.animal]?.emoji || '🐾'} ${b.nombre} ${(b.nombre > 1 ? ANIMAUX[b.animal]?.nom : ANIMAUX[b.animal]?.un || '').toLowerCase()} · ${fmtM(b.largeur)} × ${fmtM(b.longueur)}`
   : `${MATERIAUX[b.type]?.[b.materiau] || ''} · ${fmtM(b.largeur)} × ${fmtM(b.longueur)}${b.type !== 'terre' ? ` × ${fmtM(b.hauteur)}` : ''}`);
 
@@ -116,6 +116,7 @@ function nouveauBac(type = 'bac', base = {}) {
     longueur: type === 'enclos' ? 3 : type === 'serre' ? 2 : 1, hauteur: TYPES_BAC[type].hauteur,
     materiau: mat, couleur: COULEUR_DEFAUT[mat], coins: null,
     ...(type === 'enclos' ? { animal: 'poule', nombre: 3, cabane: true } : {}),
+    ...(type === 'maison' ? { largeur: 6, longueur: 5, couleur: '#e9d8b4', toit: '#c0503f', nom: n > 1 ? `Maison ${n}` : 'Ma maison' } : {}),
     ...(type === 'arbre' ? { espece: 'pommier', nombre: 1, hauteur: ARBRES.pommier.hauteur, date: versISO(auj()), couleur: '#4caf50', ...dimsVerger('pommier', 1), nom: `Pommier ${n}` } : {}),
     ...base,
   };
@@ -123,6 +124,7 @@ function nouveauBac(type = 'bac', base = {}) {
 
 // Anciennes sauvegardes : un seul potager → devient le premier bac
 async function migrer() {
+  if (!etat.perso) { etat.perso = { ...PERSO_DEFAUT }; await sauver(); }
   if (Array.isArray(etat.bacs) && etat.bacs.length) return;
   const b = nouveauBac('bac', { id: 'b1', nom: 'Mon bac', largeur: etat.largeur || 4, longueur: etat.longueur || 3, coins: etat.coins || null });
   b.materiau = 'bois'; b.couleur = '#c98a4b';
@@ -306,6 +308,7 @@ function renderPlan() {
   if (!b) return;
   if (b.type === 'enclos') { renderEnclos(b); return; }
   if (b.type === 'arbre') { renderArbres(b); return; }
+  if (b.type === 'maison') { renderMaison(b); return; }
   const plan = $('#plan'), img = $('#plan-img');
   const photo = images[b.id];
   plan.style.aspectRatio = `${b.largeur} / ${b.longueur}`;
@@ -348,7 +351,23 @@ function renderArbres(b) {
     <h3>📝 Planter un arbre, les étapes</h3>
     <ol class="etapes">${ETAPES_ARBRE.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>
     <div class="rangee"><button class="btn btn-gris" data-act="editer-bac" data-bac="${b.id}">✏️ Modifier</button>
-      <button class="btn btn-gris" data-act="couper-arbre" data-bac="${b.id}">🪓 Couper un arbre</button></div>`;
+      <button class="btn btn-gris" data-act="couper-arbre" data-bac="${b.id}">🪓 Couper un arbre</button></div>
+    <div class="rangee"><button class="btn btn-bleu" data-act="zoom" data-bac="${b.id}">🔍 Voir en 3D</button></div>`;
+}
+
+function renderMaison(b) {
+  const p = etat.perso || PERSO_DEFAUT;
+  $('#carte-enclos').innerHTML = `
+    <div class="fiche-tete" style="--c:${esc(b.couleur)}">
+      <div class="fiche-emoji">🏠</div>
+      <div><span class="badge" style="background:${esc(b.toit || '#c0503f')}">Maison</span><h2>${esc(b.nom)}</h2><small class="doux">${esc(descBac(b))} · ${fmtM(b.hauteur)} de haut</small></div>
+    </div>
+    <p class="serre-info">🧑‍🌾 <b>${esc(p.nom)}</b> habite ici et se promène dans le jardin. Touche-le en 3D pour qu'il te fasse coucou !</p>
+    <div class="rangee">
+      <button class="btn btn-gris" data-act="editer-bac" data-bac="${b.id}">✏️ Modifier</button>
+      <button class="btn btn-gris" data-act="perso">🧑‍🌾 Personnage</button>
+    </div>
+    <div class="rangee"><button class="btn btn-bleu" data-act="zoom" data-bac="${b.id}">🔍 Voir en 3D</button></div>`;
 }
 
 function renderEnclos(b) {
@@ -365,7 +384,8 @@ function renderEnclos(b) {
     <p class="conseil">💡 ${esc(a.conseil)}</p>
     <h3>📝 Les étapes</h3>
     <ol class="etapes">${a.etapes.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>
-    <div class="rangee"><button class="btn btn-gris" data-act="editer-bac" data-bac="${b.id}">✏️ Modifier l'enclos</button></div>`;
+    <div class="rangee"><button class="btn btn-gris" data-act="editer-bac" data-bac="${b.id}">✏️ Modifier l'enclos</button>
+      <button class="btn btn-bleu" data-act="zoom" data-bac="${b.id}">🔍 Voir en 3D</button></div>`;
 }
 
 let glisse = null;
@@ -814,8 +834,8 @@ function ouvrirEditeur(id, type = 'bac', base = {}) {
   const existant = id ? bacParId(id) : null;
   const b = existant ? { ...existant } : nouveauBac(type, base);
   const borner = (v, min, max, def) => Math.min(max, Math.max(min, Number(String(v).replace(',', '.')) || def));
-  const limitesH = { bac: [0.1, 1.2], serre: [1.5, 3.5], enclos: [0.4, 2], terre: [0, 0], arbre: [1, 30] };
-  const nomH = { bac: 'Hauteur du bac', serre: 'Hauteur de la serre', enclos: 'Hauteur de la clôture', terre: '', arbre: 'Hauteur de l\'arbre' };
+  const limitesH = { bac: [0.1, 1.2], serre: [1.5, 3.5], enclos: [0.4, 2], terre: [0, 0], arbre: [1, 30], maison: [2, 6] };
+  const nomH = { bac: 'Hauteur du bac', serre: 'Hauteur de la serre', enclos: 'Hauteur de la clôture', terre: '', arbre: 'Hauteur de l\'arbre', maison: 'Hauteur des murs' };
 
   const placeHTML = () => {
     const a = ANIMAUX[b.animal] || ANIMAUX.poule, surface = b.largeur * b.longueur, ok = surface >= a.m2 * b.nombre;
@@ -828,7 +848,7 @@ function ouvrirEditeur(id, type = 'bac', base = {}) {
     const a = ANIMAUX[b.animal] || ANIMAUX.poule;
     const defile = $('#feuille').scrollTop;
     ouvrirFeuille(`
-      <h2>${existant ? '✏️ Modifier' : '➕ Ajouter'} ${{ enclos: 'un enclos', serre: 'une serre', arbre: 'des arbres' }[b.type] || 'un bac'}</h2>
+      <h2>${existant ? '✏️ Modifier' : '➕ Ajouter'} ${{ enclos: 'un enclos', serre: 'une serre', arbre: 'des arbres', maison: 'une maison' }[b.type] || 'un bac'}</h2>
       <div class="types-bac">${Object.entries(TYPES_BAC).map(([k, t]) => `
         <button class="type-bac${b.type === k ? ' choisi' : ''}" data-type="${k}"><span>${t.emoji}</span>${t.nom}</button>`).join('')}</div>
       <p class="doux petit-texte">${TYPES_BAC[b.type].desc}</p>
@@ -866,9 +886,12 @@ function ouvrirEditeur(id, type = 'bac', base = {}) {
       ${b.type !== 'arbre' ? `<h3>🧱 ${b.type === 'enclos' ? 'Clôture' : b.type === 'serre' ? 'Parois' : 'Matériau'}</h3>
       <div class="filtres enveloppe">${Object.entries(mats).map(([k, t]) => `<button class="puce${b.materiau === k ? ' active' : ''}" data-mat="${k}">${t}</button>`).join('')}</div>` : ''}
       ${b.materiau !== 'aucun' ? `
-      <h3>🎨 Couleur ${b.type === 'serre' ? 'de l\'armature' : ''}</h3>
+      <h3>🎨 Couleur ${b.type === 'serre' ? 'de l\'armature' : b.type === 'maison' ? 'des murs' : ''}</h3>
       <div class="nuancier">${COULEURS_BAC.map((c) => `<button class="nuance${b.couleur === c ? ' choisi' : ''}" data-couleur="${c}" style="background:${c}" aria-label="Couleur ${c}"></button>`).join('')}
         <label class="nuance autre" title="Autre couleur"><input type="color" id="e-couleur" value="${esc(b.couleur)}">🎨</label></div>` : ''}
+      ${b.type === 'maison' ? `<h3>🏠 Couleur du toit</h3>
+      <div class="nuancier">${COULEURS_TOIT.map((c) => `<button class="nuance${b.toit === c ? ' choisi' : ''}" data-toit="${c}" style="background:${c}" aria-label="Toit ${c}"></button>`).join('')}</div>
+      <div class="rangee"><button class="btn btn-gris" data-act="perso-depuis-editeur">🧑‍🌾 Choisir mon personnage</button></div>` : ''}
       <h3>🌍 Endroit dans le monde</h3>
       <div class="lieu-mini">
         <span>${ZONES[etat.zone].emoji} <b>${ZONES[etat.zone].nom}</b><br><small>📍 ${etat.lieu ? esc(etat.lieu.nom) : 'Lieu non défini'}${etat.hemisphere === 'sud' ? ' · hémisphère sud' : ''}</small></span>
@@ -913,6 +936,7 @@ function ouvrirEditeur(id, type = 'bac', base = {}) {
         if (!existant) b.nom = neuf.nom;
         if (b.type === 'enclos') Object.assign(b, { animal: b.animal || 'poule', nombre: b.nombre || 3, cabane: b.cabane !== false });
         if (b.type === 'arbre') Object.assign(b, { espece: neuf.espece, nombre: 1, date: neuf.date, ...dimsVerger(neuf.espece, 1) });
+        if (b.type === 'maison') Object.assign(b, { largeur: neuf.largeur, longueur: neuf.longueur, toit: neuf.toit });
       }
       dessiner(); return;
     }
@@ -926,7 +950,9 @@ function ouvrirEditeur(id, type = 'bac', base = {}) {
     const an = e.target.closest('[data-animal]'); if (an) { lireChamps(); b.animal = an.dataset.animal; if (!existant) b.nom = ANIMAUX[b.animal].nom; dessiner(); return; }
     const m = e.target.closest('[data-mat]'); if (m) { lireChamps(); b.materiau = m.dataset.mat; b.couleur = COULEUR_DEFAUT[b.materiau] || b.couleur; dessiner(); return; }
     const c = e.target.closest('[data-couleur]'); if (c) { lireChamps(); b.couleur = c.dataset.couleur; dessiner(); return; }
+    const tt = e.target.closest('[data-toit]'); if (tt) { lireChamps(); b.toit = tt.dataset.toit; dessiner(); return; }
     const act = e.target.closest('[data-act]')?.dataset.act;
+    if (act === 'perso-depuis-editeur') { f.onclick = null; f.oninput = null; f.onchange = null; feuillePerso(); return; }
     if (act === 'lieu-depuis-editeur') { f.onclick = null; f.oninput = null; f.onchange = null; choisirLieu(); return; }
     if (act === 'photo-bac') { f.onclick = null; f.oninput = null; f.onchange = null; fermerFeuille(); choisirPhoto(b.id); return; }
     if (act === 'supprimer-bac') {
@@ -956,6 +982,43 @@ function ouvrirEditeur(id, type = 'bac', base = {}) {
       toutRafraichir();
       vibrer('moyen');
       toast(existant ? '💾 Enregistré !' : `${emojiElement(b)} « ${b.nom} » est dans ton jardin ! Regarde en 3D.`, 'vert');
+    }
+  };
+}
+
+// ── Mon personnage ──────────────────────────────────────────────────────
+function feuillePerso() {
+  const p = { ...PERSO_DEFAUT, ...(etat.perso || {}) };
+  const nuances = (cle, couleurs) => `<div class="nuancier">${couleurs.map((c) => `<button class="nuance${p[cle] === c ? ' choisi' : ''}" data-p="${cle}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join('')}</div>`;
+  const choix = (cle, options) => `<div class="filtres enveloppe">${Object.entries(options).map(([k, t]) => `<button class="puce${p[cle] === k ? ' active' : ''}" data-p="${cle}" data-v="${k}">${t}</button>`).join('')}</div>`;
+  const dessiner = () => {
+    const defile = $('#feuille').scrollTop;
+    ouvrirFeuille(`
+      <h2>🧑‍🌾 Mon personnage</h2>
+      <p class="doux petit-texte">Regarde-le changer en direct dans le jardin, au-dessus !</p>
+      <label class="champ">🏷️ Prénom <input id="p-nom" maxlength="20" value="${esc(p.nom)}"></label>
+      <h3>🙂 Peau</h3>${nuances('peau', PERSO.peaux)}
+      <h3>💇 Coiffure</h3>${choix('coiffure', PERSO.coiffures)}
+      ${p.coiffure !== 'chauve' ? `<h3>🎨 Couleur des cheveux</h3>${nuances('cheveux', PERSO.cheveux)}` : ''}
+      <h3>👕 Haut</h3>${nuances('haut', PERSO.hauts)}
+      <h3>👖 Bas</h3>${nuances('bas', PERSO.bas)}
+      <h3>👒 Chapeau</h3>${choix('chapeau', PERSO.chapeaux)}
+      <h3>🧺 Dans la main</h3>${choix('outil', PERSO.outils)}
+      <button class="btn btn-vert gros large" data-act="enregistrer-perso">✨ C'est moi !</button>`, true);
+    $('#feuille').scrollTop = defile;
+  };
+  const f = $('#feuille');
+  f.onclick = null; f.oninput = null; f.onchange = null;
+  dessiner();
+  allerA('visuel'); scene?.zoomSur('perso');
+  f.oninput = (e) => { if (e.target.id === 'p-nom') p.nom = e.target.value.trim() || 'Moi'; };
+  f.onclick = async (e) => {
+    const o = e.target.closest('[data-p]');
+    if (o) { p[o.dataset.p] = o.dataset.v; scene?.majPerso(p); dessiner(); return; }
+    if (e.target.closest('[data-act="enregistrer-perso"]')) {
+      f.onclick = null; f.oninput = null;
+      etat.perso = p; await sauver(); fermerFeuille(); scene?.majPerso(p); scene?.saluer(); vibrer('moyen');
+      toast(`👋 Salut ${p.nom} !`, 'vert');
     }
   };
 }
@@ -1072,11 +1135,13 @@ function menuNouveau() {
     <div class="types-bac grand">${Object.entries(TYPES_BAC).map(([k, t]) => `
       <button class="type-bac" data-nouveau="${k}"><span>${t.emoji}</span><b>${t.nom}</b><small>${t.desc}</small></button>`).join('')}</div>
     ${terrainHTML()}
-    <div class="rangee"><button class="btn btn-gris" data-act="deplacer-depuis-menu">✋ Déplacer mes installations</button></div>`);
+    <div class="rangee"><button class="btn btn-gris" data-act="deplacer-depuis-menu">✋ Déplacer mes installations</button></div>
+    <div class="rangee"><button class="btn btn-gris" data-act="perso-depuis-menu">🧑‍🌾 Mon personnage</button></div>`);
   brancherTerrain();
   $('#feuille').onclick = (e) => {
     const n = e.target.closest('[data-nouveau]');
     if (n) { $('#feuille').onclick = null; ouvrirEditeur(null, n.dataset.nouveau); }
+    if (e.target.closest('[data-act="perso-depuis-menu"]')) { $('#feuille').onclick = null; feuillePerso(); return; }
     if (e.target.closest('[data-act="deplacer-depuis-menu"]')) { $('#feuille').onclick = null; fermerFeuille(); basculerDeplacement(true); }
   };
 }
@@ -1135,6 +1200,8 @@ document.addEventListener('click', async (e) => {
   switch (b.dataset.act) {
     case 'photo': choisirPhoto(bacActuel()?.type === 'enclos' ? bacsCultures()[0]?.id : bacActuel()?.id); break;
     case 'nouvel-element': menuNouveau(); break;
+    case 'perso': feuillePerso(); break;
+    case 'zoom': allerA('visuel'); setTimeout(() => scene?.zoomSur(b.dataset.bac), 60); break;
     case 'deplacer-mode': basculerDeplacement(); toast(modeDeplacer ? '✋ Attrape une installation et fais-la glisser' : '✅ Positions enregistrées'); break;
     case 'deplacer-fin': basculerDeplacement(false); break;
     case 'ranger-auto': rangerAuto(); break;
@@ -1223,12 +1290,22 @@ function toutRafraichir() {
   if (meteo) renderMeteo();
 }
 
+// Petit « pop » sur chaque bouton touché
+document.addEventListener('pointerdown', (e) => {
+  const b = e.target.closest('button, .btn, .puce, .rond, .ligne, .marqueur');
+  if (!b) return;
+  b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+  setTimeout(() => b.classList.remove('pop'), 350);
+});
+
 // ── Démarrage ───────────────────────────────────────────────────────────
 async function demarrer() {
   etat = await chargerEtat();
   await migrer();
   renderReglages();
-  scene = creerScene($('#scene'), { onSelect: (id) => { if (id) ficheplantation(id); }, onDecor: couperDecor, onDeplace: deplacerInstallation });
+  scene = creerScene($('#scene'), { onSelect: (id) => { if (id) ficheplantation(id); }, onDecor: couperDecor, onDeplace: deplacerInstallation,
+    onInstallation: (id) => { const b = bacParId(id); if (b) { vibrer('leger'); toast(`${emojiElement(b)} ${b.nom} · ${descBac(b)}`); setTimeout(() => scene?.zoomSur(id), 250); } },
+    onPerso: () => { vibrer('leger'); toast(`👋 Coucou ! C'est ${etat.perso?.nom || 'moi'} !`); } });
   if (scene) {
     scene.setFond(etat.fond);
     if (typeof etat.etiquettes === 'boolean') etat.etiquettes = etat.etiquettes ? 'auto' : 'aucune';
@@ -1237,6 +1314,7 @@ async function demarrer() {
   }
   for (const b of etat.bacs) await appliquerPlan(b.id, await lire(clePlan(b.id)));
   majJardin();
+  scene?.majPerso(etat.perso);
   toutRafraichir();
   renderNiveau(false);
   if (etat.lieu) chargerMeteo();

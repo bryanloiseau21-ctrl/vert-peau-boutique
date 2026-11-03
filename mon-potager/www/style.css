@@ -108,6 +108,9 @@ main { position: fixed; inset: 0 0 var(--nav-h) 0; }
   transition: transform .1s, box-shadow .1s, background .2s;
 }
 .rond:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--gris-fonce), var(--ombre); }
+.barre-outils { gap: 8px; }
+.barre-outils .rond { width: 46px; height: 46px; font-size: 1.2rem; }
+@media (max-height: 760px) { .barre-outils .rond { width: 40px; height: 40px; font-size: 1.05rem; } .barre-outils { gap: 6px; } }
 .rond.actif { background: var(--or); box-shadow: 0 4px 0 var(--or-fonce), var(--ombre); }
 .rond.actif:active { box-shadow: 0 1px 0 var(--or-fonce); }
 .rond.off { opacity: .55; }
@@ -436,6 +439,11 @@ main { position: fixed; inset: 0 0 var(--nav-h) 0; }
 .terrain { display: flex; align-items: center; gap: 12px; }
 .terrain input { flex: 1; accent-color: var(--vert); height: 28px; }
 .terrain b { min-width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.pop { animation: pop .32s cubic-bezier(.3,1.8,.5,1); }
+.marqueur.pop { animation: popMarqueur .32s cubic-bezier(.3,1.8,.5,1); }
+@keyframes pop { 0% { scale: 1; } 40% { scale: .9; } 100% { scale: 1; } }
+@keyframes popMarqueur { 0% { scale: 1; } 40% { scale: 1.25; } 100% { scale: 1; } }
 
 /* ── Confirmation ── */
 .dialogue { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: rgba(20,35,20,.5); animation: apparait .2s ease; }

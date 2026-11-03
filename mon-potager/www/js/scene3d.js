@@ -183,6 +183,7 @@ function textureMateriau(materiau, couleur) {
 function construireBac(b, texture) {
   if (b.type === 'enclos') return construireEnclos(b);
   if (b.type === 'arbre') return construireArbres(b);
+  if (b.type === 'maison') return construireMaison(b);
   const g = new THREE.Group();
   const l = b.largeur, L = b.longueur, couleur = b.couleur || '#c98a4b';
   const solMat = new THREE.MeshLambertMaterial({ map: texture || textureTerre() });
@@ -524,7 +525,108 @@ function construireEnclos(b) {
   return { groupe: g, hSol: 0.04, animaux };
 }
 
-export function creerScene(conteneur, { onSelect, onDecor, onDeplace } = {}) {
+// ── Maison ────────────────────────────────────────────────────────────
+function construireMaison(b) {
+  const g = new THREE.Group();
+  const l = b.largeur, L = b.longueur, H = Math.min(6, Math.max(2, b.hauteur || 2.6));
+  const t = textureMateriau(b.materiau === 'enduit' ? 'beton' : b.materiau, b.couleur || '#e9d8b4');
+  t.repeat.set(Math.max(1, Math.round(l / 1.5)), Math.max(1, Math.round(H / 0.8)));
+  const murs = new THREE.Mesh(new THREE.BoxGeometry(l, H, L), new THREE.MeshLambertMaterial({ map: t }));
+  murs.position.y = H / 2; murs.castShadow = true; murs.receiveShadow = true; g.add(murs);
+  // toit à deux pentes (prisme), un peu plus grand que les murs
+  const d = 0.35, hT = Math.min(l, L) * 0.45, W = l / 2 + d, P = L / 2 + d;
+  const v = [-W, 0, -P, W, 0, -P, 0, hT, -P, -W, 0, P, W, 0, P, 0, hT, P];
+  const idx = [0, 2, 1, 3, 4, 5, 0, 3, 5, 0, 5, 2, 1, 2, 5, 1, 5, 4, 0, 1, 4, 0, 4, 3];
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+  const toit = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: b.toit || '#c0503f', flatShading: true, side: THREE.DoubleSide }));
+  toit.position.y = H; toit.castShadow = true; g.add(toit);
+  // cheminée
+  const ch = new THREE.Mesh(new THREE.BoxGeometry(0.4, hT * 0.9, 0.4), matPlat('#8a8f99')); ch.position.set(l * 0.25, H + hT * 0.55, -L * 0.15); ch.castShadow = true; g.add(ch);
+  // porte et fenêtres côté +z
+  const porte = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.9, 0.06), matPlat('#7a4b2a')); porte.position.set(0, 0.95, L / 2 + 0.02); g.add(porte);
+  const poignee = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), matPlat('#ffd23f')); poignee.position.set(0.3, 0.95, L / 2 + 0.07); g.add(poignee);
+  const fenetre = (x, y, z, ry) => {
+    const f = new THREE.Group();
+    const cadre = new THREE.Mesh(new THREE.BoxGeometry(1, 0.9, 0.06), matPlat('#ffffff')); f.add(cadre);
+    const vitre = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.74, 0.07), new THREE.MeshLambertMaterial({ color: '#9fd8ff', emissive: '#2a5a7a', emissiveIntensity: 0.3 })); f.add(vitre);
+    const croix = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.74, 0.08), matPlat('#ffffff')); f.add(croix);
+    const fleurs = new THREE.Mesh(new THREE.BoxGeometry(1, 0.15, 0.2), matPlat('#7a4b2a')); fleurs.position.set(0, -0.52, 0.1); f.add(fleurs);
+    for (let i = 0; i < 4; i++) { const fl = new THREE.Mesh(new THREE.IcosahedronGeometry(0.07, 0), matPlat(['#ff6b8b', '#ffd23f', '#ffffff', '#b07cff'][i])); fl.position.set(-0.36 + i * 0.24, -0.4, 0.12); f.add(fl); }
+    f.position.set(x, y, z); f.rotation.y = ry; g.add(f);
+  };
+  if (l > 2.6) { fenetre(-l * 0.3, H * 0.55, L / 2 + 0.03, 0); fenetre(l * 0.3, H * 0.55, L / 2 + 0.03, 0); }
+  fenetre(l / 2 + 0.03, H * 0.55, 0, Math.PI / 2); fenetre(-l / 2 - 0.03, H * 0.55, 0, -Math.PI / 2);
+  // petit chemin devant la porte
+  for (let i = 0; i < 3; i++) { const dalle = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.04, 8), matPlat('#c9ccd6')); dalle.position.set((i % 2 ? 0.1 : -0.1), 0.02, L / 2 + 0.5 + i * 0.6); g.add(dalle); }
+  return { groupe: g, hSol: 0.04 };
+}
+
+// ── Personnage ────────────────────────────────────────────────────────
+function creerPerso(p) {
+  const g = new THREE.Group();
+  const corps = new THREE.Group(); g.add(corps);
+  const boite = (x, y, z, l, h, e, c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(l, h, e), matPlat(c)); m.position.set(x, y, z); m.castShadow = true; return m; };
+  const jambeG = new THREE.Group(), jambeD = new THREE.Group();
+  for (const [j, x] of [[jambeG, -0.11], [jambeD, 0.11]]) {
+    j.position.set(x, 0.8, 0); j.add(boite(0, -0.4, 0, 0.18, 0.8, 0.2, p.bas)); j.add(boite(0, -0.78, 0.04, 0.2, 0.08, 0.28, '#3a2a20')); corps.add(j);
+  }
+  corps.add(boite(0, 1.12, 0, 0.5, 0.65, 0.3, p.haut));
+  const brasG = new THREE.Group(), brasD = new THREE.Group();
+  for (const [b, x] of [[brasG, -0.32], [brasD, 0.32]]) {
+    b.position.set(x, 1.4, 0); b.add(boite(0, -0.28, 0, 0.14, 0.56, 0.16, p.haut)); b.add(boite(0, -0.6, 0, 0.13, 0.12, 0.14, p.peau)); corps.add(b);
+  }
+  const tete = new THREE.Group(); tete.position.y = 1.66; corps.add(tete);
+  tete.add(boite(0, 0, 0, 0.36, 0.38, 0.34, p.peau));
+  for (const x of [-0.08, 0.08]) tete.add(boite(x, 0.03, 0.175, 0.05, 0.06, 0.02, '#2b1d14'));
+  tete.add(boite(0, -0.09, 0.175, 0.12, 0.03, 0.02, '#c0504d'));
+  const ch = p.cheveux;
+  if (p.coiffure !== 'chauve') {
+    tete.add(boite(0, 0.2, -0.02, 0.4, 0.1, 0.38, ch));
+    tete.add(boite(0, 0.06, -0.18, 0.4, 0.3, 0.06, ch));
+    if (p.coiffure === 'long') tete.add(boite(0, -0.2, -0.18, 0.4, 0.42, 0.08, ch));
+    if (p.coiffure === 'couettes') for (const x of [-0.25, 0.25]) { const c = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 0), matPlat(ch)); c.position.set(x, 0, -0.1); tete.add(c); }
+    if (p.coiffure === 'boucles') for (let i = 0; i < 7; i++) { const c = new THREE.Mesh(new THREE.IcosahedronGeometry(0.09, 0), matPlat(ch)); c.position.set(-0.18 + i * 0.06, 0.2 + (i % 2) * 0.04, -0.05 + (i % 3) * 0.05); tete.add(c); }
+  }
+  if (p.chapeau === 'paille') {
+    const bord = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.03, 16), matPlat('#e8c86a')); bord.position.y = 0.24; tete.add(bord);
+    const haut = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.18, 12), matPlat('#e8c86a')); haut.position.y = 0.33; tete.add(haut);
+    const ruban = new THREE.Mesh(new THREE.CylinderGeometry(0.225, 0.225, 0.05, 12), matPlat('#c0504d')); ruban.position.y = 0.27; tete.add(ruban);
+  } else if (p.chapeau === 'casquette') {
+    const c = new THREE.Mesh(new THREE.SphereGeometry(0.21, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), matPlat(p.haut)); c.position.y = 0.18; tete.add(c);
+    tete.add(boite(0, 0.19, 0.25, 0.3, 0.03, 0.2, p.haut));
+  } else if (p.chapeau === 'bonnet') {
+    const c = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), matPlat('#e74c3c')); c.position.y = 0.16; tete.add(c);
+    const pompon = new THREE.Mesh(new THREE.IcosahedronGeometry(0.07, 0), matPlat('#ffffff')); pompon.position.y = 0.4; tete.add(pompon);
+  }
+  if (p.outil === 'arrosoir') {
+    const a = new THREE.Group(); a.add(boite(0, 0, 0, 0.24, 0.22, 0.16, '#3fbf5f'));
+    const bec = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.3, 6), matPlat('#3fbf5f')); bec.rotation.z = -1; bec.position.set(0.2, 0.06, 0); a.add(bec);
+    a.position.set(0.05, -0.72, 0.05); brasD.add(a);
+  } else if (p.outil === 'panier') {
+    const a = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 0.16, 10), matPlat('#c98a4b')); a.position.set(0, -0.72, 0.05); brasD.add(a);
+    for (let i = 0; i < 3; i++) { const f = new THREE.Mesh(new THREE.IcosahedronGeometry(0.05, 0), matPlat(['#e53935', '#ff9f1c', '#3fbf5f'][i])); f.position.set(-0.06 + i * 0.06, -0.62, 0.05); brasD.add(f); }
+  } else if (p.outil === 'pelle') {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.9, 5), matPlat('#8a5a32')); m.position.set(0, -0.6, 0.1); brasD.add(m);
+    brasD.add(boite(0, -1.08, 0.1, 0.18, 0.22, 0.03, '#9aa3ad'));
+  }
+  g.scale.setScalar(1.25);
+  g.userData = { perso: true, jambeG, jambeD, brasG, brasD, tete, cible: null, attente: 1, salut: 0 };
+  return g;
+}
+
+// Texture d'un emoji pour les particules (mise en cache)
+const cacheEmoji = new Map();
+function textureEmoji(e) {
+  if (cacheEmoji.has(e)) return cacheEmoji.get(e);
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  g.font = '48px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(e, 32, 36);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  cacheEmoji.set(e, t); return t;
+}
+
+export function creerScene(conteneur, { onSelect, onDecor, onDeplace, onInstallation, onPerso } = {}) {
   let renderer;
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: false });
@@ -568,6 +670,70 @@ export function creerScene(conteneur, { onSelect, onDecor, onDeplace } = {}) {
   let modeDeplacer = false, saisie = null;
   const solPlan = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // arbres du décor qu'on peut couper
   const chutes = []; // arbres en train de tomber
+  const effets = new THREE.Group(); // particules (étincelles, cœurs, feuilles…)
+  let perso = null; // le personnage du joueur
+  let vol = null; // déplacement animé de la caméra (zoom sur une installation)
+  const tweens = []; // petites animations quand on touche quelque chose
+
+  // Gerbe de petits emojis qui jaillissent puis retombent
+  function jaillir(pos, emojis, n = 8, taille = 0.35, force = 1) {
+    for (let i = 0; i < n; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: textureEmoji(emojis[i % emojis.length]), transparent: true, depthWrite: false }));
+      sp.position.copy(pos); sp.scale.setScalar(taille * (0.7 + Math.random() * 0.6));
+      const a = Math.random() * Math.PI * 2, v = (0.8 + Math.random() * 1.4) * force;
+      sp.userData = { v: new THREE.Vector3(Math.cos(a) * v, (2 + Math.random() * 1.5) * force, Math.sin(a) * v), vie: 0, duree: 0.9 + Math.random() * 0.5, taille: sp.scale.x };
+      effets.add(sp);
+    }
+  }
+  // Onde qui s'élargit sur le sol
+  function onde(pos, couleur = '#ffffff') {
+    const m = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.42, 32), new THREE.MeshBasicMaterial({ color: couleur, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide }));
+    m.rotation.x = -Math.PI / 2; m.position.copy(pos); m.position.y += 0.05;
+    m.userData = { onde: true, vie: 0, duree: 0.7 };
+    effets.add(m);
+  }
+  // type : 'rebond' (s'écrase puis rebondit), 'secoue' (tremble), 'saut' (petit bond), 'tourne'
+  function animer(obj, type, duree = 0.6) {
+    const ancien = tweens.find((t) => t.obj === obj);
+    if (ancien) { ancien.t = 0; return; }
+    tweens.push({ obj, type, t: 0, duree, echelle: obj.scale.clone(), rotY: obj.rotation.y, rotZ: obj.rotation.z });
+  }
+  function majEffets(dt) {
+    for (let i = tweens.length - 1; i >= 0; i--) {
+      const w = tweens[i]; w.t += dt;
+      const k = Math.min(1, w.t / w.duree), amort = 1 - k;
+      if (w.type === 'rebond') {
+        const o = Math.sin(k * Math.PI * 3) * 0.22 * amort;
+        w.obj.scale.set(w.echelle.x * (1 - o * 0.5), w.echelle.y * (1 + o), w.echelle.z * (1 - o * 0.5));
+      } else if (w.type === 'secoue') {
+        w.obj.rotation.z = w.rotZ + Math.sin(k * Math.PI * 8) * 0.12 * amort;
+      } else if (w.type === 'saut') {
+        w.obj.position.y += Math.sin(k * Math.PI) * 0.45;
+        w.obj.rotation.y = w.rotY + k * Math.PI * 2;
+      } else if (w.type === 'tourne') {
+        const o = Math.sin(k * Math.PI) * 0.35;
+        w.obj.scale.set(w.echelle.x * (1 + o), w.echelle.y * (1 + o), 1);
+        w.obj.material.rotation = k * Math.PI * 2;
+      }
+      if (k >= 1) {
+        w.obj.scale.copy(w.echelle);
+        if (w.type === 'secoue') w.obj.rotation.z = w.rotZ;
+        if (w.type === 'tourne') w.obj.material.rotation = 0;
+        tweens.splice(i, 1);
+      }
+    }
+    for (let i = effets.children.length - 1; i >= 0; i--) {
+      const p = effets.children[i], u = p.userData; u.vie += dt;
+      const k = u.vie / u.duree;
+      if (u.onde) { p.scale.setScalar(1 + k * 4); p.material.opacity = 0.9 * (1 - k); }
+      else {
+        u.v.y -= 6 * dt; p.position.addScaledVector(u.v, dt);
+        p.material.opacity = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
+        p.scale.setScalar(u.taille * (k < 0.15 ? k / 0.15 : 1));
+      }
+      if (k >= 1) { effets.remove(p); p.material.dispose(); p.geometry?.dispose?.(); }
+    }
+  }
   let modeEtiquettes = 'auto';
   let selection = null;
   let fondActuel = 'ciel';
@@ -648,9 +814,14 @@ export function creerScene(conteneur, { onSelect, onDecor, onDeplace } = {}) {
     // Soleil et caméra adaptés à la taille
     soleil.position.set(R * 0.8, R * 2, R * 0.6);
     const s = soleil.shadow.camera; s.left = s.bottom = -R * 1.2; s.right = s.top = R * 1.2; s.near = 0.5; s.far = R * 6; s.updateProjectionMatrix();
-    controles.minDistance = R * 0.8; controles.maxDistance = R * 5;
+    controles.minDistance = 1.5; controles.maxDistance = R * 5;
     camera.far = R * 30; camera.updateProjectionMatrix();
     return R;
+  }
+
+  function volVers(cible, cam) {
+    controles.autoRotate = false;
+    vol = { t: 0, camDe: camera.position.clone(), camA: cam, cibleDe: controles.target.clone(), cibleA: cible };
   }
 
   function cadrer(R) {
@@ -780,16 +951,66 @@ export function creerScene(conteneur, { onSelect, onDecor, onDeplace } = {}) {
     const cibles = [];
     marqueurs.children.forEach((g) => { cibles.push(g.userData.pastille); if (g.userData.etiquette.visible) cibles.push(g.userData.etiquette); });
     const hit = ray.intersectObjects(cibles, false)[0];
-    if (!hit && onDecor) {
+    if (hit) {
+      const pastille = hit.object.parent.userData.pastille;
+      animer(pastille, 'tourne', 0.6);
+      const pos = new THREE.Vector3(); pastille.getWorldPosition(pos);
+      jaillir(pos, ['✨', '⭐', '✨', '💚'], 10, 0.22, 0.7);
+    } else {
+      // le personnage ?
+      if (perso) {
+        const hp = ray.intersectObject(perso, true)[0];
+        if (hp) {
+          perso.userData.salut = 1.6; perso.userData.cible = null;
+          const pos = perso.position.clone(); pos.y += 2.6;
+          jaillir(pos, ['👋', '😊', '✨'], 8, 0.4);
+          onPerso?.();
+          return;
+        }
+      }
+      // un animal ?
+      const ha = ray.intersectObjects(troupeau.filter((a) => a.userData.anim), true)[0];
+      if (ha) {
+        let o = ha.object; while (o && !o.userData.anim) o = o.parent;
+        if (o) {
+          const pos = new THREE.Vector3(); o.getWorldPosition(pos); pos.y += 0.5;
+          if (o.userData.fixe) { animer(o, 'rebond', 0.7); jaillir(pos, ['🐝', '🍯', '🐝'], 9, 0.3); }
+          else { animer(o, 'saut', 0.55); jaillir(pos, ['❤️', '💕', '✨'], 7, 0.28); }
+          return;
+        }
+      }
+      // un arbre du décor : il tremble, perd des feuilles, puis on propose de le couper
       const touche = ray.intersectObjects(decorArbres, true)[0];
       if (touche) {
         let o = touche.object; while (o && !o.userData.cle) o = o.parent;
-        if (o) { onDecor(o.userData.cle); return; }
+        if (o) {
+          animer(o, 'secoue', 0.6);
+          jaillir(touche.point, ['🍃', '🍂', '🍃'], 9, 0.3, 0.6);
+          if (onDecor) setTimeout(() => onDecor(o.userData.cle), 450);
+          return;
+        }
       }
+      // une installation (bac, serre, enclos, verger)
+      const hb = ray.intersectObjects(Object.values(groupesBacs), true)[0];
+      if (hb) {
+        let o = hb.object; while (o && !o.userData.bacId) o = o.parent;
+        if (o) {
+          const b = jardin.bacs.find((x) => x.id === o.userData.bacId);
+          animer(o, 'rebond', 0.7);
+          const e = b?.type === 'serre' ? ['☀️', '✨', '💧'] : b?.type === 'enclos' ? ['❤️', '✨', '🌾'] : b?.type === 'arbre' ? ['🍃', '🌸', '✨'] : ['🌱', '✨', '💧'];
+          jaillir(hb.point.clone().setY(hb.point.y + 0.3), e, 10, 0.32);
+          onInstallation?.(b?.id);
+          return;
+        }
+      }
+      // l'herbe
+      const p = pointSol();
+      if (p && Math.hypot(p.x, p.z) < R) { onde(p, '#eaffd8'); jaillir(p.clone().setY(0.2), ['✨', '🌿'], 5, 0.25, 0.5); }
     }
     selection = hit ? hit.object.userData.id : null;
     majEtiquettes();
-    onSelect?.(selection);
+    if (selection) { const id = selection; setTimeout(() => onSelect?.(id), 380); } // on laisse voir l'animation
+    else onSelect?.(null);
   });
 
   // ── Boucle d'animation ──
@@ -807,6 +1028,39 @@ export function creerScene(conteneur, { onSelect, onDecor, onDeplace } = {}) {
   const ro = new ResizeObserver(() => { redimensionner(); if (!cadre && conteneur.clientHeight) { cadre = true; cadrer(R); } });
   ro.observe(conteneur);
   redimensionner();
+  // Le personnage se promène dans le jardin entre les installations
+  function animerPerso(dt, t) {
+    const u = perso.userData;
+    if (u.salut > 0) { // il fait coucou
+      u.salut -= dt; u.brasD.rotation.z = 2.6 + Math.sin(t * 14) * 0.4; u.jambeG.rotation.x = u.jambeD.rotation.x = 0;
+      const dir = camera.position.clone().sub(perso.position); perso.rotation.y = Math.atan2(dir.x, dir.z);
+      if (u.salut <= 0) u.brasD.rotation.z = 0;
+      return;
+    }
+    if (u.attente > 0) { u.attente -= dt; u.jambeG.rotation.x = u.jambeD.rotation.x = u.brasG.rotation.x = u.brasD.rotation.x = 0; u.tete.rotation.y = Math.sin(t) * 0.4; return; }
+    if (!u.cible) {
+      const ids = Object.keys(jardin.places);
+      const lim = Math.max(1.5, R - 1.2);
+      let x, z;
+      if (ids.length && Math.random() < 0.7) { // va voir une installation
+        const b = jardin.bacs.find((q) => q.id === ids[Math.floor(Math.random() * ids.length)]); const p = jardin.places[b.id];
+        const cote = Math.random() < 0.5 ? 1 : -1;
+        x = p.x + (Math.random() - 0.5) * b.largeur; z = p.z + cote * (b.longueur / 2 + 0.7);
+      } else { const a = Math.random() * Math.PI * 2, d = Math.random() * lim; x = Math.cos(a) * d; z = Math.sin(a) * d; }
+      const dd = Math.hypot(x, z); if (dd > lim) { x *= lim / dd; z *= lim / dd; }
+      u.cible = new THREE.Vector3(x, 0, z);
+    }
+    const d = u.cible.clone().sub(perso.position); d.y = 0;
+    const dist = d.length();
+    if (dist < 0.1) { u.cible = null; u.attente = 2 + Math.random() * 4; return; }
+    d.normalize(); perso.position.addScaledVector(d, Math.min(dist, 1.1 * dt));
+    let diff = Math.atan2(d.x, d.z) - perso.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+    perso.rotation.y += diff * Math.min(1, dt * 8);
+    const sw = Math.sin(t * 9) * 0.6;
+    u.jambeG.rotation.x = sw; u.jambeD.rotation.x = -sw; u.brasG.rotation.x = -sw * 0.8; u.brasD.rotation.x = sw * 0.8;
+    perso.position.y = Math.abs(Math.sin(t * 9)) * 0.04;
+  }
+
   // Les animaux marchent vers un point au hasard, s'arrêtent picorer, repartent
   function animerAnimal(a, dt, t) {
     const e = a.userData.essaim;
@@ -837,6 +1091,14 @@ export function creerScene(conteneur, { onSelect, onDecor, onDeplace } = {}) {
     });
     const dt = Math.min(0.05, t - (boucle.avant || t)); boucle.avant = t;
     for (const a of troupeau) animerAnimal(a, dt, t);
+    if (perso) animerPerso(dt, t);
+    if (vol) {
+      vol.t += dt; const k = Math.min(1, vol.t / 0.9), e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+      camera.position.lerpVectors(vol.camDe, vol.camA, e); controles.target.lerpVectors(vol.cibleDe, vol.cibleA, e);
+      if (k >= 1) vol = null;
+    }
+    if (!effets.parent) scene.add(effets);
+    majEffets(dt);
     for (let i = chutes.length - 1; i >= 0; i--) { // l'arbre bascule, puis laisse une souche
       const c = chutes[i]; c.t += dt;
       const k = Math.min(1, c.t / 0.8);
@@ -901,7 +1163,29 @@ export function creerScene(conteneur, { onSelect, onDecor, onDeplace } = {}) {
     setFond: appliquerFond,
     setEtiquettes(mode) { modeEtiquettes = mode === true ? 'toutes' : mode === false ? 'aucune' : mode; majEtiquettes(); },
     setAutoRotation(v) { controles.autoRotate = v; },
-    recentrer() { cadrer(R); },
+    recentrer() { volVers(new THREE.Vector3(0, -R * 0.12, 0), (() => { const ratio = (conteneur.clientWidth || 1) / (conteneur.clientHeight || 1), k = ratio < 0.8 ? 1.4 : 1; return new THREE.Vector3(R * 0.2 * k, R * 1.15 * k, R * 2.35 * k); })()); },
+    // Zoom : la caméra vole jusqu'à une installation (ou jusqu'au personnage)
+    zoomSur(id) {
+      let centre, taille;
+      if (id === 'perso') { if (!perso) return; centre = perso.position.clone().setY(1); taille = 2.5; }
+      else {
+        const b = jardin.bacs.find((x) => x.id === id), p = jardin.places[id]; if (!b || !p) return;
+        centre = new THREE.Vector3(p.x, b.type === 'serre' || b.type === 'maison' || b.type === 'arbre' ? Math.min(2, (b.hauteur || 1) / 2) : 0.2, p.z);
+        taille = Math.max(b.largeur, b.longueur, b.type === 'arbre' || b.type === 'maison' ? b.hauteur || 3 : 0);
+      }
+      const dir = camera.position.clone().sub(controles.target).setY(0).normalize();
+      if (!dir.lengthSq()) dir.set(0, 0, 1);
+      const dist = Math.max(3, taille * 1.5);
+      volVers(centre, centre.clone().add(dir.multiplyScalar(dist)).setY(centre.y + dist * 0.7));
+    },
+    majPerso(p) {
+      const ancien = perso;
+      perso = p ? creerPerso(p) : null;
+      if (ancien) { if (perso) { perso.position.copy(ancien.position); perso.rotation.y = ancien.rotation.y; } scene.remove(ancien); }
+      else if (perso) { const m = jardin.bacs.find((b) => b.type === 'maison'); const pm = m && jardin.places[m.id]; perso.position.set(pm ? pm.x : 0.8, 0, pm ? pm.z + m.longueur / 2 + 1 : R * 0.3); }
+      if (perso) scene.add(perso);
+    },
+    saluer() { if (perso) { perso.userData.salut = 1.6; } },
     setActif(v) { actif = v; if (v) redimensionner(); },
     capture() { controles.update(); renderer.render(scene, camera); return renderer.domElement.toDataURL('image/png'); },
     detruire() { cancelAnimationFrame(idAnim); ro.disconnect(); renderer.dispose(); },

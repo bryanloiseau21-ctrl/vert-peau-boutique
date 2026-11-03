@@ -291,6 +291,24 @@ export const ETAPES_ARBRE = [
   'Arrose copieusement (20 litres) puis toutes les semaines la première année, et paille le pied.',
 ];
 
+// Maison
+TYPES_BAC.maison = { nom: 'Maison', emoji: '🏠', hauteur: 2.6, desc: 'Ta maison ou ta cabane de jardin, avec ton personnage qui se promène.' };
+MATERIAUX.maison = { bois: 'Chalet en bois', pierre: 'Pierre', brique: 'Brique', enduit: 'Crépi' };
+COULEUR_DEFAUT.enduit = '#f3e7cf';
+export const COULEURS_TOIT = ['#c0503f', '#8a3b2e', '#4a4f57', '#2f6fa8', '#3f7d4e', '#d9a441', '#6b4f3a', '#e9e2d4'];
+
+// Personnage : tout est au choix
+export const PERSO = {
+  peaux: ['#ffdfc4', '#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#5c3a1e'],
+  coiffures: { court: 'Courts', long: 'Longs', couettes: 'Couettes', boucles: 'Bouclés', chauve: 'Sans cheveux' },
+  cheveux: ['#2b1d14', '#5a3825', '#a0522d', '#e8c27a', '#d35400', '#9e9e9e', '#ff6fae', '#4fa3ff'],
+  hauts: ['#e74c3c', '#3aa5ff', '#3fbf5f', '#ffc93c', '#8a6cff', '#ffffff', '#2c3e50', '#ff8fb3'],
+  bas: ['#2f4a7a', '#3a3a3a', '#8b5a2b', '#5b8c3a', '#c0c0c0', '#7a4fa3'],
+  chapeaux: { aucun: 'Aucun', paille: 'Chapeau de paille', casquette: 'Casquette', bonnet: 'Bonnet' },
+  outils: { aucun: 'Rien', arrosoir: 'Arrosoir', panier: 'Panier', pelle: 'Pelle' },
+};
+export const PERSO_DEFAUT = { nom: 'Moi', peau: '#f1c27d', coiffure: 'court', cheveux: '#5a3825', haut: '#3fbf5f', bas: '#2f4a7a', chapeau: 'paille', outil: 'arrosoir' };
+
 export const PLANTE_PAR_ID = Object.fromEntries(PLANTES.map((p) => [p.id, p]));
 
 // Zones climatiques. Les décalages sont en mois par rapport à la zone de référence :
