@@ -276,7 +276,8 @@ try {
   await capture(page, '19-personnage');
   // Zoom sur la maison
   await page.click('.onglet[data-vue="potager"]');
-  await page.click(`[data-bac="${maison.id}"]`);
+  await page.waitForTimeout(400);
+  ok(await page.isVisible('#carte-enclos [data-act="zoom"]'), 'Fiche de la maison affichée');
   await page.click('#carte-enclos [data-act="zoom"]');
   await page.waitForTimeout(1300);
   ok(await page.isVisible('#vue-visuel'), 'Zoom : retour au visuel 3D');
